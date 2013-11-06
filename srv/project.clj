@@ -5,7 +5,8 @@
                  [compojure "1.1.5"]
                  [hiccup "1.0.4"]
 								 [ring "1.2.1"]
-								 [liberator "0.9.0"]]
+								 [liberator "0.9.0"]
+								 [org.clojars.achim/multiset "0.1.0-SNAPSHOT"]]
   :plugins [[lein-ring "0.8.7"]]
   :ring {:handler gamalyzer.handler/app
          :init gamalyzer.handler/init

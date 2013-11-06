@@ -1,5 +1,7 @@
 (ns gamalyzer.read.edn
-	(:require [clojure.edn :refer [read]])
+	(:require [clojure.edn :refer [read]]
+						[multiset.core :as ms]
+						[gamalyzer.data.input :refer [make-input make-domains expand-domain]])
 	(:import (java.io PushbackReader FileReader)))
 
 (defn open-log [path blacklist]
@@ -20,7 +22,25 @@
 
 (defn read-log-entry [h] (read {:eof nil} (:reader h)))
 
-(defn read-log-trace [h]
+; [:i player (prochead args)|procname (lev choiceid) choice inputs] ->
+; [determinant values]
+; [([procname |args|] lev-choiceid choice) (inputs* player args*)]
+(defn input-parts [i]
+	(let [player (nth i 1)
+				ph (nth i 2)
+				[name arity args]
+					(if (keyword? ph)
+						[ph 0 '()]
+						[(first ph) (- (count ph) 1) (rest ph)])
+				lev-choiceid (nth i 3)
+				choice (nth i 4)
+				inputs (nth i 5)
+				k (list [name arity] lev-choiceid choice)
+				v (concat inputs '(player) args)]
+		[k v]))
+
+
+(defn read-log-trace [h domains]
 	(if-let [start (read-log-entry h)]
 		(let [fs (first start)
 					ss (second start)
@@ -30,37 +50,42 @@
 				; until :log_end
 				; read the whole thing into a ... vector? cons list?
 				; and then return it.
-				(loop [v (transient (vector))]
+				(loop [v (transient (vector))
+							 doms domains]
 					(let [t (read-log-entry h)]
 						(cond
-							(= t :log_end) {:id ss :inputs (persistent! v)}
+							(= t :log_end) [{:id ss :inputs (persistent! v)} doms]
 							(= (first t) :log_start)
 								(do
 									(close-log h)
 									(throw (Exception. "New log started in the middle of existing log")))
-							:true
-						 		(cond
-								 	(and (= :i (first t)) (contains? bl (second t))) (recur v)
-									:true (recur (conj! v t))))))
+							(and (= :i (first t)) (contains? bl (second t))) (recur v doms)
+						 	(= :i (first t))
+						 		(let [input (apply make-input (input-parts t))
+											new-domains (expand-domain input doms)]
+									(recur (conj! v input) new-domains))
+						  :true (recur v doms))))
 				(do
 					(close-log h)
 					(throw (Exception. "Log does not begin with :log_start term")))))
 		nil))
 
-(defn read-logs [path how-many blacklist]
+(defn read-logs [path how-many blacklist domains]
 	(let [log (open-log path blacklist)]
 		(loop [ts (transient (hash-map))
-					 remaining how-many]
+					 remaining how-many
+					 doms domains]
 			(if (> remaining 0)
-				(if-let [trace (read-log-trace log)]
+				(if-let [[trace new-doms] (read-log-trace log doms)]
 					(recur
 					 (assoc! ts (:id trace) (:inputs trace))
-					 (- remaining 1))
+					 (- remaining 1)
+					 new-doms)
 					(do
 						(close-log log)
-						(persistent! ts)))
+						{:traces (persistent! ts) :domains doms}))
 				(do
 					(close-log log)
-					(persistent! ts))))))
+					{:traces (persistent! ts) :domains doms})))))
 
-(count (first (vals (time (read-logs "/Users/joe/Projects/game/xsb/logs/log.i.trace" 1 (hash-set :system :random))))))
+(first (vals (:traces (time (read-logs "/Users/joe/Projects/game/xsb/logs/log.i.trace" 1 (hash-set :system :random) (make-domains))))))
