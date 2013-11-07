@@ -70,16 +70,17 @@
 					(throw (Exception. "Log does not begin with :log_start term")))))
 		nil))
 
-(defn read-logs [path how-many blacklist domains]
-	(let [log (open-log path blacklist)]
+(defn read-logs [path how-many blacklist indoms]
+	(let [log (open-log path blacklist)
+				domains (if (nil? indoms) (make-domains) indoms)]
 		(loop [ts (transient (hash-map))
 					 remaining how-many
 					 doms domains]
-			(if (> remaining 0)
+			(if (or (= remaining :all) (> remaining 0))
 				(if-let [[trace new-doms] (read-log-trace log doms)]
 					(recur
 					 (assoc! ts (:id trace) (:inputs trace))
-					 (- remaining 1)
+					 (if (number? remaining) (- remaining 1) remaining)
 					 new-doms)
 					(do
 						(close-log log)
@@ -88,4 +89,4 @@
 					(close-log log)
 					{:traces (persistent! ts) :domains doms})))))
 
-(first (vals (:traces (time (read-logs "/Users/joe/Projects/game/xsb/logs/log.i.trace" 1 (hash-set :system :random) (make-domains))))))
+; (count (vals (:traces (time (read-logs "/Users/joe/Projects/game/xsb/logs/log.i.trace" 1 (hash-set :system :random) nil)))))
