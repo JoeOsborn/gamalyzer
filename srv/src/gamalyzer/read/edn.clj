@@ -13,11 +13,11 @@
       ; ([:game :dominion] [:root :root] [:events (:i)])
       {:file file :reader pb :blacklist blacklist}
       (do
-        (. file close)
+        (.close file)
         (throw (Exception. "no log properties"))))))
 
 (defn close-log [h]
-  (. (:file h) close)
+  (.close (:file h))
   nil)
 
 (defn- read-log-entry [h] (edn/read {:eof nil} (:reader h)))
