@@ -5,9 +5,10 @@
             [fs.core :refer [tmpdir size file]]
             [gamalyzer.read.edn :refer [read-logs]]))
 
-;;;; After Ferragina et al.:
+;;;; Universal compression-based dissimilarity as justified by Ferragina et al.:
 ;;;; "Compression-based classification of biological sequences and structures
 ;;;;  via the Universal Similarity Metric: experimental assessment"
+;;;; The UCD measure is from Li et al., "The Similarity Metric".
 ;;;; This hard-codes the use of 7zip (PPM compression), and memoizes the
 ;;;; "compressed size" calculation in a LU-replacing cache.
 ;;;; The basic idea comes from Keogh et al.:
