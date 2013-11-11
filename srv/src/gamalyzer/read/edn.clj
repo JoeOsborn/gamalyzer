@@ -1,5 +1,5 @@
 (ns gamalyzer.read.edn
-	(:require [clojure.edn :refer [read]]
+	(:require [clojure.edn :as edn]
 						[multiset.core :as ms]
 						[gamalyzer.data.input :refer [make-input make-domains expand-domain]])
 	(:import (java.io PushbackReader FileReader)))
@@ -7,7 +7,7 @@
 (defn open-log [path blacklist]
 	(let [file (FileReader. path)
 		    pb (PushbackReader. file)
-		    props (read pb)]
+		    props (edn/read pb)]
 		(if (= (first props) :properties)
 		; later: do stuff with (second props) i.e. prop-list, which is a pairlist like:
 		; ([:game :dominion] [:root :root] [:events (:i)])
@@ -20,12 +20,12 @@
 	(. (:file h) close)
 	nil)
 
-(defn read-log-entry [h] (read {:eof nil} (:reader h)))
+(defn- read-log-entry [h] (edn/read {:eof nil} (:reader h)))
 
 ; [:i player (prochead args)|procname (lev choiceid) choice inputs] ->
 ; [determinant values]
 ; [([procname |args|] lev-choiceid choice) (inputs* player args*)]
-(defn input-parts [i]
+(defn- input-parts [i]
 	(let [player (nth i 1)
 				ph (nth i 2)
 				[name arity args]
@@ -89,4 +89,4 @@
 					(close-log log)
 					{:traces (persistent! ts) :domains doms})))))
 
-; (count (vals (:traces (time (read-logs "/Users/joe/Projects/game/xsb/logs/log.i.trace" 1 (hash-set :system :random) nil)))))
+;(count (vals (:traces (time (read-logs "/Users/jcosborn/Projects/game/xsb/logs/log.i.trace" 1 (hash-set :system :random) nil)))))
