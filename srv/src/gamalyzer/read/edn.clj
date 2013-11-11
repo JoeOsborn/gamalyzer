@@ -1,7 +1,7 @@
 (ns gamalyzer.read.edn
   (:require [clojure.edn :as edn]
             [multiset.core :as ms]
-            [gamalyzer.data.input :refer [make-input make-domains expand-domain]])
+            [gamalyzer.data.input :refer [make-input make-domains expand-domain player]])
   (:import (java.io PushbackReader FileReader)))
 
 (defn open-log [path blacklist]
@@ -22,11 +22,12 @@
 
 (defn- read-log-entry [h] (edn/read {:eof nil} (:reader h)))
 
-; [:i player (prochead args)|procname (lev choiceid) choice inputs] ->
-; [determinant values]
+; [time player (prochead args)|procname (lev choiceid) choice inputs] ->
+; [time player determinant values]
 ; [([procname |args|] lev-choiceid choice) (inputs* player args*)]
 (defn- input-parts [i]
-  (let [player (nth i 1)
+  (let [t (nth i 0)
+        player (nth i 1)
         ph (nth i 2)
         [name arity args]
         (if (keyword? ph)
@@ -37,8 +38,7 @@
         inputs (nth i 5)
         k (list [name arity] lev-choiceid choice)
         v (concat inputs '(player) args)]
-    [k v]))
-
+    [t player k v]))
 
 (defn read-log-trace [h domains]
   (if-let [start (read-log-entry h)]
@@ -56,15 +56,22 @@
             (cond
              (= t :log_end) [{:id ss :inputs (persistent! v)} doms]
              (= (first t) :log_start)
-             (do
-               (close-log h)
-               (throw (Exception. "New log started in the middle of existing log")))
-             (and (= :i (first t)) (contains? bl (second t))) (recur v doms)
+               (do
+                 (close-log h)
+                 (throw (Exception. "New log started in the middle of existing log")))
              (= :i (first t))
-             (let [input (apply make-input (input-parts t))
-                   new-domains (expand-domain input doms)]
-               (recur (conj! v input) new-domains))
-             :true (recur v doms))))
+               (let [t' (case (count t)
+                          6 (concat [(count v)] (rest t))
+                          7 (rest t))
+                     inp (apply make-input (input-parts t'))]
+                 (cond
+                  (contains? bl (player inp))
+                    (recur v doms)
+                  true
+                    (let [new-domains (expand-domain inp doms)]
+                      (recur (conj! v inp) new-domains))))
+             true
+               (recur v doms))))
         (do
           (close-log h)
           (throw (Exception. "Log does not begin with :log_start term")))))
@@ -89,4 +96,4 @@
           (close-log log)
           {:traces (persistent! ts) :domains doms})))))
 
-;(count (vals (:traces (time (read-logs "/Users/jcosborn/Projects/game/xsb/logs/log.i.trace" 1 (hash-set :system :random) nil)))))
+(count (vals (:traces (time (read-logs "/Users/jcosborn/Projects/game/xsb/logs/log.i.trace" 1 (hash-set :system :random) nil)))))
