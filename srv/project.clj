@@ -6,7 +6,8 @@
                  [hiccup "1.0.4"]
 								 [ring "1.2.1"]
 								 [liberator "0.9.0"]
-								 [org.clojars.achim/multiset "0.1.0-SNAPSHOT"]]
+								 [org.clojars.achim/multiset "0.1.0-SNAPSHOT"]
+								 [org.clojure/math.numeric-tower "0.0.2"]]
   :plugins [[lein-ring "0.8.7"]]
   :ring {:handler gamalyzer.handler/app
          :init gamalyzer.handler/init
