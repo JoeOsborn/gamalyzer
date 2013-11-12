@@ -1,9 +1,10 @@
 (ns gamalyzer.cmp.t-t.cdm
   (:require [clojure.java.shell :refer [sh]]
-            [clojure.core.memoize :as memo]
+            [clojure.core.cache :as cache]
             [clojure.math.combinatorics :refer [cartesian-product]]
-            [fs.core :refer [tmpdir size file]]
-            [gamalyzer.read.edn :refer [read-logs]]))
+            [gamalyzer.read.edn :refer [read-logs]])
+  (:import [org.apache.commons.compress.compressors.xz XZCompressorOutputStream]
+           [java.io BufferedOutputStream ByteArrayOutputStream]))
 
 ;;;; Universal compression-based dissimilarity as justified by Ferragina et al.:
 ;;;; "Compression-based classification of biological sequences and structures
@@ -16,28 +17,36 @@
 ;;;; and Keogh et al. in a related paper:
 ;;;; "Compression-based data mining of sequential data"
 
-(def compressed-size
-  (memo/lu
-   (fn [s]
-     (let [d (tmpdir)
-           sf (str d "s.txt")
-           szf (str d "s.7z")]
-       (spit (file sf) s)
-       (sh "7za" "a" szf sf)
-       (size szf)))
-   {}
-   :lu/threshold 10000))
+(def C (cache/soft-cache-factory {}))
+
+(defn compressed-size [k s]
+  (if (cache/has? C k)
+    (do
+     (cache/hit C k)
+     (cache/lookup C k))
+    (let
+      [out (ByteArrayOutputStream. 2048)
+       cmp (XZCompressorOutputStream. out 4)]
+      (.write cmp (.getBytes (.toString s)))
+      (.close cmp)
+      (let [sz (.size out)]
+        (.close out)
+        (cache/miss C k sz)
+        sz))))
 
 (defn diss [s1 s2 doms]
-  (let [s1sz (compressed-size s1)
-        s2sz (compressed-size s2)
-        s12sz (compressed-size [s1 s2])
-        s21sz (compressed-size [s2 s1])
+  (let [u1 (:uuid s1) t1 (:trace s1)
+        u2 (:uuid s2) t2 (:trace s2)
+        s1sz (compressed-size u1 t1)
+        s2sz (compressed-size u2 t2)
+        s12sz (compressed-size [u1 u2] [t1 t2])
+        s21sz (compressed-size [u2 u1] [t2 t1])
         ucd-num (max (- s12sz s1sz) (- s21sz s2sz))
         ucd-denom (max s1sz s2sz)]
     (/ ucd-num ucd-denom)))
 
-(time (let [vs (vec (vals (:traces (read-logs "/Users/jcosborn/Projects/game/xsb/logs/log.i.trace" 3 (hash-set :system :random) nil))))]
+(time (doall (let [vs (:traces (read-logs "/Users/jcosborn/Projects/game/xsb/logs/log.i.trace" 3 (hash-set :system :random) nil))
+            vss (vec (keys vs))]
     (map (fn [[a b]]
-           (vector [a b] (double (diss (get vs a) (get vs b) nil))))
-         (cartesian-product [0 1 2] [0 1 2]))))
+           (vector [a b] (double (diss {:uuid (get vss a), :trace (get vs (get vss a))} {:uuid (get vss b), :trace (get vs (get vss b))} nil))))
+         (cartesian-product [0 1 2] [0 1 2])))))
