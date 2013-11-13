@@ -40,16 +40,19 @@
   (let [r (get-domain doms path)
         rng (rrange r)
         d (abs (- v1 v2))]
-    (/ d rng)))
+    (if (= d 0)
+      0
+      (/ d rng))))
 
 (defn- vs-diss-prim [v1 v2] (if (= v1 v2) 0.0 1.0))
 
 (defn- vs-diss [vs1 vs2 path doms]
   (cond
    (and (vector? vs1) (vector? vs2)) (vs-diss-vecs vs1 vs2 path doms)
-   (and (list? vs1) (list? vs2)) (vs-diss-lists vs1 vs2 path doms)
+   (and (sequential? vs1) (sequential? vs2)) (vs-diss-lists vs1 vs2 path doms)
    (and (number? vs1) (number? vs2)) (vs-diss-nums vs1 vs2 path doms)
-   (and (not (seq? vs1)) (not (seq? vs2))) (vs-diss-prim vs1 vs2)))
+   (and (not (sequential? vs1)) (not (sequential? vs2))) (vs-diss-prim vs1 vs2)
+   true (throw (Exception. (str "Could not find distance between " (.toString vs1) " and " (.toString vs2))))))
 
 (defn diss [i1 i2 doms]
   (let [[_ _ d1 vs1] (parts i1)

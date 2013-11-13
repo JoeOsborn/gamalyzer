@@ -35,13 +35,13 @@
 (defn- expand-domains [dds inp path]
   (let [h (first inp)
         tail (rest inp)
-        end (- (count path) 1)
-        next-path (assoc path end (+ 1 (get path end)))]
+        end (dec (count path))
+        next-path (assoc path end (inc (get path end)))]
     (cond
      (nil? h) dds
-     (seq? h)
+     (sequential? h)
        (expand-domains
-        (expand-domains dds h (conj path 1))
+        (expand-domains dds h (conj path 0))
         tail
         next-path)
      true
@@ -60,4 +60,5 @@
 ;(expand-domain (make-input 0 0 :a '((1))) (make-domains))
 ;(expand-domain (make-input 0 0 :a '((1) :a (2))) (make-domains))
 ;(expand-domain (make-input 1 0 :a '((2) :b (3))) (expand-domain (make-input 0 0 :a '((1) :a (2))) (make-domains)))
-;(expand-domain (make-input 1 0 :b '((1) :b (2))) (expand-domain (make-input 0 0 :a '((1) :a (2))) (make-domains)))
+(expand-domain (make-input 1 0 :b '((1) :b (2))) (expand-domain (make-input 0 0 :a '((1) :a (2))) (make-domains)))
+(expand-domain (make-input 1 0 :a [[:p 1] :b [2]]) (expand-domain (make-input 0 0 :a [[:p 1] :a [2]]) (make-domains)))
