@@ -2,7 +2,8 @@
   (:require [clojure.java.shell :refer [sh]]
             [clojure.core.cache :as cache]
             [clojure.math.combinatorics :refer [cartesian-product]]
-            [gamalyzer.read.edn :refer [read-logs]])
+            [gamalyzer.read.edn :refer [read-logs]]
+            [clojure.java.io :refer [writer]])
   (:import [org.apache.commons.compress.compressors.xz XZCompressorOutputStream]
            [java.io BufferedOutputStream ByteArrayOutputStream]))
 
@@ -26,8 +27,10 @@
      (cache/lookup C k))
     (let
       [out (ByteArrayOutputStream. 2048)
-       cmp (XZCompressorOutputStream. out 4)]
-      (.write cmp (.getBytes (.toString s)))
+       cmp (XZCompressorOutputStream. out 4)
+       wrt (writer cmp)]
+      (.write wrt (.toString s))
+      (.close wrt)
       (.close cmp)
       (let [sz (.size out)]
         (.close out)
@@ -45,8 +48,8 @@
         ucd-denom (max s1sz s2sz)]
     (/ ucd-num ucd-denom)))
 
-(time (doall (let [vs (:traces (read-logs "/Users/jcosborn/Projects/game/xsb/logs/log.i.trace" 3 (hash-set :system :random) nil))
+(time (doall (let [vs (:traces (read-logs "/Users/jcosborn/Projects/game/xsb/logs/log.i.trace" 10 (hash-set :system :random) nil))
             vss (vec (keys vs))]
     (map (fn [[a b]]
            (vector [a b] (double (diss {:uuid (get vss a), :trace (get vs (get vss a))} {:uuid (get vss b), :trace (get vs (get vss b))} nil))))
-         (cartesian-product [0 1 2] [0 1 2])))))
+         (cartesian-product (range 0 10) (range 0 10))))))
