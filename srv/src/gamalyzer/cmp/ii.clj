@@ -1,4 +1,4 @@
-(ns gamalyzer.cmp.i-i
+(ns gamalyzer.cmp.ii
   (:require [gamalyzer.data.input :refer [parts make-domains make-input expand-domain get-domains get-domain]]
             [gamalyzer.data.range :refer [rrange]]
             [clojure.math.numeric-tower :refer [abs]]
@@ -14,9 +14,9 @@
 
 (defn- vs-diss-vecs [vs1 vs2 path doms]
   (let [l1 (count vs1)
-        l2 (count vs2)
+       ; l2 (count vs2)
         each-diss (/ 1.0 l1)]
-    (when-not (= l1 l2) (throw (IllegalArgumentException. "Sequences of unequal length")))
+   ; (when-not (= l1 l2) (throw (IllegalArgumentException. "Sequences of unequal length")))
     (second
      (reduce (fn [[i d] [v1 v2]]
                (let [new-d (* (vs-diss v1 v2 (conj path i) doms) each-diss)]
@@ -26,8 +26,9 @@
 
 (defn- vs-diss-lists [vs1 vs2 path doms]
   (let [l1 (count vs1)
-        l2 (count vs2)]
-    (when-not (= l1 l2) (throw (IllegalArgumentException. "Sequences of unequal length")))
+        ;l2 (count vs2)
+        ]
+    ;(when-not (= l1 l2) (throw (IllegalArgumentException. "Sequences of unequal length")))
     (second
      (reduce (fn [[i d] [v1 v2]]
                (let [this-diss (/ (- l1 i) (inc l1))
@@ -46,7 +47,7 @@
 
 (defn- vs-diss-prim [v1 v2] (if (= v1 v2) 0.0 1.0))
 
-(defn- vs-diss [vs1 vs2 path doms]
+(defn vs-diss [vs1 vs2 path doms]
   (cond
    (and (vector? vs1) (vector? vs2)) (vs-diss-vecs vs1 vs2 path doms)
    (and (sequential? vs1) (sequential? vs2)) (vs-diss-lists vs1 vs2 path doms)
@@ -55,8 +56,8 @@
    true (throw (Exception. (str "Could not find distance between " (.toString vs1) " and " (.toString vs2))))))
 
 (defn diss [i1 i2 doms]
-  (let [[_ _ d1 vs1] (parts i1)
-        [_ _ d2 vs2] (parts i2)]
+  (let [[d1 vs1] (parts i1)
+        [d2 vs2] (parts i2)]
     (if-not (= d1 d2) 1.0
       (* (vs-diss vs1 vs2 [] (get-domains doms d1)) 0.8))))
 

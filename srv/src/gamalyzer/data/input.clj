@@ -15,7 +15,7 @@
 (defn player [i] (:player i))
 (defn determinant [i] (:det i))
 (defn values [i] (:vals i))
-(defn parts [i] [(t i) (player i) (determinant i) (values i)])
+(defn parts [i] [(determinant i) (values i)])
 
 (defn- merge-domains [dds path belt]
   (update-in

@@ -1,4 +1,4 @@
-(ns gamalyzer.cmp.t-t.cdm
+(ns gamalyzer.cmp.tt.cdm
   (:require [clojure.java.shell :refer [sh]]
             [clojure.core.cache :as cache]
             [clojure.math.combinatorics :refer [cartesian-product]]
@@ -27,7 +27,7 @@
      (cache/lookup C k))
     (let
       [out (ByteArrayOutputStream. 2048)
-       cmp (XZCompressorOutputStream. out 4)
+       cmp (XZCompressorOutputStream. out 3)
        wrt (writer cmp)]
       (.write wrt (.toString s))
       (.close wrt)
@@ -48,8 +48,19 @@
         ucd-denom (max s1sz s2sz)]
     (/ ucd-num ucd-denom)))
 
-(time (doall (let [vs (:traces (read-logs "/Users/jcosborn/Projects/game/xsb/logs/log.i.trace" 10 (hash-set :system :random) nil))
-            vss (vec (keys vs))]
-    (map (fn [[a b]]
-           (vector [a b] (double (diss {:uuid (get vss a), :trace (get vs (get vss a))} {:uuid (get vss b), :trace (get vs (get vss b))} nil))))
-         (cartesian-product (range 0 10) (range 0 10))))))
+(defn tst [lim]
+  (time (doall (let [logs (read-logs "/Users/jcosborn/Projects/game/xsb/logs/log.i.trace"
+                                     lim
+                                     (hash-set :system :random)
+                                     nil)
+                     vs (:traces logs)
+                     doms (:domains logs)
+                     vss (vec (keys vs))]
+                 (for [x (range 0 lim)
+                       y (range (inc x) lim)
+                       :let [id1 (get vss x), id2 (get vss y)]]
+                   [x y
+                    (double (diss {:uuid id1, :trace (get vs id1)}
+                                  {:uuid id2, :trace (get vs id2)}
+                                  doms))])))))
+(tst 5)

@@ -3,6 +3,7 @@
   :url "http://github.com/JoeOsborn/gamalyzer"
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/core.cache "0.6.3"]
+                 [org.clojure/core.memoize "0.5.6"]
                  [org.clojure/math.combinatorics "0.0.6"]
                  [org.apache.commons/commons-compress "1.6"]
                  [compojure "1.1.5"]
@@ -10,7 +11,9 @@
                  [ring "1.2.1"]
                  [liberator "0.9.0"]
                  [org.clojars.achim/multiset "0.1.0-SNAPSHOT"]
-                 [org.clojure/math.numeric-tower "0.0.2"]]
+                 [org.clojure/math.numeric-tower "0.0.2"]
+                 [net.mikera/vectorz-clj "0.17.0"]
+                 [net.mikera/core.matrix "0.15.0"]]
   :plugins [[lein-ring "0.8.7"]]
   :ring {:handler gamalyzer.handler/app
          :init gamalyzer.handler/init
