@@ -5,7 +5,8 @@
             [clojure.math.combinatorics :refer [cartesian-product]]
             [gamalyzer.read.edn :refer [read-logs]]
             [clojure.core.matrix :refer [new-matrix mget mset! set-current-implementation
-                                         shape]]))
+                                         shape]])
+  (:import [java.lang Double]))
 
 (set-current-implementation :vectorz)
 ;;;; Continuous editing distance (dynamic programming implementation)
@@ -36,14 +37,14 @@
      (> y 0) [[x py]]
      true [])))
 
-(defn- norm-score [s l1 l2]
-  (if (= l1 l2 0) s (/ s (+ l1 l2))))
+(defn- norm-score ^double [s l1 l2]
+  (if (== l1 l2 0.0) s (/ s (+ l1 l2))))
 
 (defn best-path [mat]
   (let [[ml nl] (shape mat)
         m (dec ml) n (dec nl)]
     (loop [x m, y n, path (list [m n (norm-score (mget mat m n) m n)])]
-      (if (= x y 0)
+      (if (== x y 0.0)
         path
         (let [[mx my] (apply min-key #(mget mat (first %) (second %)) (preds x y))]
           (recur mx my (conj path [mx my (norm-score (mget mat mx my) mx my) (if (and (= mx (dec x)) (= my (dec y))) :diag (if (= mx x) :vert :hori))])))))))
@@ -60,13 +61,14 @@
                  i2 (get s2 y)
                  nx (inc x)
                  ny (inc y)]]
-       (let [i-dist (ii/diss i1 i2 doms)]
+       (let [i-dist (ii/diss i1 i2 doms)
+             best-dist (min
+                        (+ i-dist (mget mat x y))
+                        (+ del-cost (mget mat x ny))
+                        (+ ins-cost (mget mat nx y)))]
          (mset! mat
                 nx ny
-                (min
-                 (+ i-dist (mget mat x y))
-                 (+ del-cost (mget mat x ny))
-                 (+ ins-cost (mget mat nx y)))))))
+                best-dist))))
     [(mget mat m n) (best-path mat)]))
 
 (defn diss [s1 s2 doms]

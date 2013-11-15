@@ -1,6 +1,7 @@
 (ns gamalyzer.cmp.ii
   (:require [gamalyzer.data.input :refer [parts make-domains make-input expand-domain get-domains get-domain]]
             [gamalyzer.data.range :refer [rrange]]
+            [gamalyzer.read.edn :refer [read-logs]]
             [clojure.math.numeric-tower :refer [abs]]
             [clojure.test :refer [is]]))
 
@@ -12,50 +13,53 @@
 
 (declare vs-diss)
 
-(defn- vs-diss-vecs [vs1 vs2 path doms]
-  (let [l1 (count vs1)
+(defn- vs-diss-vecs ^double [vs1 vs2 path doms]
+  (let [l1 (double (count vs1))
        ; l2 (count vs2)
-        each-diss (/ 1.0 l1)]
+        each-diss (double (/ 1.0 l1))]
    ; (when-not (= l1 l2) (throw (IllegalArgumentException. "Sequences of unequal length")))
-    (second
-     (reduce (fn [[i d] [v1 v2]]
-               (let [new-d (* (vs-diss v1 v2 (conj path i) doms) each-diss)]
-                 [(inc i) (+ d new-d)]))
-             [0 0]
-             (map vector vs1 vs2)))))
+    (loop [i (int 0) d (double 0.0)]
+      (let [v1 (get vs1 i)
+            v2 (get vs2 i)
+            new-d (double (* (vs-diss v1 v2 (conj path i) doms) each-diss))]
+        (if (< i l1)
+          (recur (inc i) (+ d new-d))
+          (+ d new-d))))))
 
-(defn- vs-diss-lists [vs1 vs2 path doms]
-  (let [l1 (count vs1)
+(defn- vs-diss-lists ^double [vs1 vs2 path doms]
+  (let [l1 (double (count vs1))
+        one (double 1.0)
+        ool1p (double (/ 1.0 (inc l1)))
         ;l2 (count vs2)
         ]
     ;(when-not (= l1 l2) (throw (IllegalArgumentException. "Sequences of unequal length")))
-    (second
-     (reduce (fn [[i d] [v1 v2]]
-               (let [this-diss (/ (- l1 i) (inc l1))
-                     new-d (* (vs-diss v1 v2 (conj path i) doms) this-diss)]
-                 [(inc i) (+ d new-d)]))
-             [0 0]
-             (map vector vs1 vs2)))))
+    (loop [i (int 0) ii (double 0.0) d (double 0.0) vs1r vs1 vs2r vs2]
+      (if (empty? vs1r)
+        d
+        (let [v1 (first vs1r)
+              v2 (first vs2r)
+              this-diss (double (* (- l1 ii) ool1p))
+              new-d (* (vs-diss v1 v2 (conj path i) doms) this-diss)]
+          (recur (inc i) (+ ii one) (+ d new-d) (rest vs1r) (rest vs2r)))))))
 
-(defn- vs-diss-nums [v1 v2 path doms]
+(defn- vs-diss-nums ^double [v1 v2 path doms]
   (let [r (get-domain doms path)
-        rng (rrange r)
-        d (abs (- v1 v2))]
-    (if (= d 0)
-      0
-      (/ d rng))))
+        rng (double (rrange r))
+        d (double (abs (- v1 v2)))]
+    (if (== d 0.0) 0.0 (/ d rng))))
 
-(defn- vs-diss-prim [v1 v2] (if (= v1 v2) 0.0 1.0))
+(defn- vs-diss-prim ^double [v1 v2] (if (= v1 v2) 0.0 1.0))
 
-(defn vs-diss [vs1 vs2 path doms]
+(defn vs-diss ^double [vs1 vs2 path doms]
   (cond
+;   (= vs1 vs2) 0.0
    (and (vector? vs1) (vector? vs2)) (vs-diss-vecs vs1 vs2 path doms)
    (and (sequential? vs1) (sequential? vs2)) (vs-diss-lists vs1 vs2 path doms)
    (and (number? vs1) (number? vs2)) (vs-diss-nums vs1 vs2 path doms)
    (and (not (sequential? vs1)) (not (sequential? vs2))) (vs-diss-prim vs1 vs2)
    true (throw (Exception. (str "Could not find distance between " (.toString vs1) " and " (.toString vs2))))))
 
-(defn diss [i1 i2 doms]
+(defn diss ^double [i1 i2 doms]
   (let [[d1 vs1] (parts i1)
         [d2 vs2] (parts i2)]
     (if-not (= d1 d2) 1.0
@@ -87,3 +91,13 @@
   (is (= 0.0 (diss ia1 ia1 ds)))
   (is (= 0.4 (diss ia1 ia2 ds)))
   (is (< 0.080 (diss ib1 ib4 ds) 0.081)))
+
+(let [i1 {:det (list [:play_card 2] (list :library 0) :keep),
+          :vals (list [:p 2] [:p 2] :library)}
+      i2 {:det (list [:play_card 2] (list :library 0) :keep),
+          :vals (list [:p 2] [:p 2] :library)}
+      doms (:domains (read-logs "/Users/jcosborn/Projects/game/xsb/logs/log.i.trace"
+                                7
+                                (hash-set :system :random)
+                                nil))]
+  (is (not (Double/isNaN (diss i1 i2 doms)))))

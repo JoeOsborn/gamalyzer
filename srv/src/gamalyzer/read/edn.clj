@@ -37,7 +37,7 @@
         choice (nth i 4)
         inputs (nth i 5)
         k (list [name arity] lev-choiceid choice)
-        v (concat inputs '(player) args)]
+        v (concat inputs (list player) args)]
     [t player k v]))
 
 (defn read-log-trace [h domains]
