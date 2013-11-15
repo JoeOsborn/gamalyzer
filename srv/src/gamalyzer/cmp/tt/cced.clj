@@ -38,16 +38,19 @@
      true [])))
 
 (defn- norm-score ^double [s l1 l2]
-  (if (== l1 l2 0.0) s (/ s (+ l1 l2))))
+  (if (and (== l1 0.0) (== l2 0.0)) s (/ s (+ l1 l2))))
 
 (defn best-path [mat]
   (let [[ml nl] (shape mat)
         m (dec ml) n (dec nl)]
     (loop [x m, y n, path (list [m n (norm-score (mget mat m n) m n)])]
-      (if (== x y 0.0)
+      (if (and (== x 0.0) (== y 0.0))
         path
         (let [[mx my] (apply min-key #(mget mat (first %) (second %)) (preds x y))]
-          (recur mx my (conj path [mx my (norm-score (mget mat mx my) mx my) (if (and (= mx (dec x)) (= my (dec y))) :diag (if (= mx x) :vert :hori))])))))))
+          (recur mx my
+                 (conj path [mx my
+                             (norm-score (mget mat mx my) mx my)
+                             (if (and (= mx (dec x)) (= my (dec y))) :diag (if (= mx x) :vert :hori))])))))))
 
 (defn distance [s1 s2 doms]
   (let [m (count s1)

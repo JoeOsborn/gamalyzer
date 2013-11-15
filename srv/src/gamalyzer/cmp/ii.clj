@@ -19,12 +19,12 @@
         each-diss (double (/ 1.0 l1))]
    ; (when-not (= l1 l2) (throw (IllegalArgumentException. "Sequences of unequal length")))
     (loop [i (int 0) d (double 0.0)]
-      (let [v1 (get vs1 i)
-            v2 (get vs2 i)
-            new-d (double (* (vs-diss v1 v2 (conj path i) doms) each-diss))]
-        (if (< i l1)
-          (recur (inc i) (+ d new-d))
-          (+ d new-d))))))
+      (if (< i l1)
+        (let [v1 (vs1 i)
+              v2 (vs2 i)
+              new-d (double (* (vs-diss v1 v2 (conj path i) doms) each-diss))]
+          (recur (inc i) (+ d new-d)))
+        d))))
 
 (defn- vs-diss-lists ^double [vs1 vs2 path doms]
   (let [l1 (double (count vs1))
@@ -52,7 +52,7 @@
 
 (defn vs-diss ^double [vs1 vs2 path doms]
   (cond
-;   (= vs1 vs2) 0.0
+   (= vs1 vs2) 0.0
    (and (vector? vs1) (vector? vs2)) (vs-diss-vecs vs1 vs2 path doms)
    (and (sequential? vs1) (sequential? vs2)) (vs-diss-lists vs1 vs2 path doms)
    (and (number? vs1) (number? vs2)) (vs-diss-nums vs1 vs2 path doms)
