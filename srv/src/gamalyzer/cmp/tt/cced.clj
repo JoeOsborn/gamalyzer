@@ -55,20 +55,20 @@
 (defn distance [s1 s2 doms]
   (let [m (count s1)
         n (count s2)
-        max-dist (+ m n)
         mat (init-matrix (inc m) (inc n))]
     (doall
-     (for [x (range 0 m)
-           y (range 0 n)
-           :let [i1 (get s1 x)
-                 i2 (get s2 y)
-                 nx (inc x)
-                 ny (inc y)]]
-       (let [i-dist (ii/diss i1 i2 doms)
+     (for [nx (range 1 (inc m))
+           ny (range 1 (inc n))
+           :let [px (dec nx)
+                 py (dec ny)
+                 i1 (get s1 px)
+                 i2 (get s2 py)]]
+       (let [i-dist-0 (ii/diss i1 i2 doms)
+             i-dist (if (< i-dist-0 1.0) i-dist-0 Double/POSITIVE_INFINITY)
              best-dist (min
-                        (+ i-dist (mget mat x y))
-                        (+ del-cost (mget mat x ny))
-                        (+ ins-cost (mget mat nx y)))]
+                        (+ i-dist (mget mat px py))
+                        (+ del-cost (mget mat px ny))
+                        (+ ins-cost (mget mat nx py)))]
          (mset! mat
                 nx ny
                 best-dist))))
@@ -82,7 +82,7 @@
           l1 (count t1)
           l2 (count t2)
           [dist path] (distance t1 t2 doms)
-          max-dist (+ l1 l2)]
+          max-dist (+ (* ins-cost l1) (* del-cost l2))]
       (/ dist max-dist))))
 
 (defn tst [lim]
