@@ -38,8 +38,8 @@
         sz))))
 
 (defn diss [s1 s2 doms]
-  (let [u1 (:uuid s1) t1 (:trace s1)
-        u2 (:uuid s2) t2 (:trace s2)
+  (let [u1 (:id s1) t1 (:inputs s1)
+        u2 (:id s2) t2 (:inputs s2)
         s1sz (compressed-size u1 t1)
         s2sz (compressed-size u2 t2)
         s12sz (compressed-size [u1 u2] [t1 t2])
@@ -60,7 +60,7 @@
                        y (range (inc x) lim)
                        :let [id1 (get vss x), id2 (get vss y)]]
                    [x y
-                    (double (diss {:uuid id1, :trace (get vs id1)}
-                                  {:uuid id2, :trace (get vs id2)}
+                    (double (diss {:id id1, :inputs (get vs id1)}
+                                  {:id id2, :inputs (get vs id2)}
                                   doms))])))))
 (tst 5)

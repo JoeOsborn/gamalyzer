@@ -86,7 +86,7 @@
       (if (or (= remaining :all) (> remaining 0))
         (if-let [[trace new-doms] (read-log-trace log doms)]
           (recur
-           (assoc! ts (:id trace) (:inputs trace))
+           (assoc! ts (:id trace) trace)
            (if (number? remaining) (- remaining 1) remaining)
            new-doms)
           (do
@@ -96,4 +96,4 @@
           (close-log log)
           {:traces (persistent! ts) :domains doms})))))
 
-(count (vals (:traces (time (read-logs "/Users/jcosborn/Projects/game/xsb/logs/log.i.trace" 1 (hash-set :system :random) nil)))))
+(:traces (time (read-logs "/Users/jcosborn/Projects/game/xsb/logs/log.i.trace" 1 (hash-set :system :random) nil)))
