@@ -13,7 +13,9 @@
                  [org.clojars.achim/multiset "0.1.0-SNAPSHOT"]
                  [org.clojure/math.numeric-tower "0.0.2"]
                  [net.mikera/vectorz-clj "0.17.0"]
-                 [net.mikera/core.matrix "0.15.0"]]
+                 [net.mikera/core.matrix "0.15.0"]
+                 [de.uni-konstanz.inf.algo/mdsj "0.2"]]
+  :repositories {"project" "file:maven_repository"}
   :plugins [[lein-ring "0.8.7"]]
   :ring {:handler gamalyzer.handler/app
          :init gamalyzer.handler/init
