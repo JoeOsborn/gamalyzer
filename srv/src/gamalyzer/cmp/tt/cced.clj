@@ -4,9 +4,9 @@
             [clojure.math.numeric-tower :refer [abs]]
             [clojure.math.combinatorics :refer [cartesian-product]]
             [gamalyzer.read.synth :refer [read-logs]]
-            [clojure.core.matrix :refer [new-matrix mget mset! fill!
-                                         set-current-implementation
-                                         shape]])
+            [clojure.core.matrix :refer [new-matrix mget mset! fill fill! assign shape
+                                         new-vector
+                                         set-current-implementation]])
   (:import [java.lang Double]))
 
 (set-current-implementation :vectorz)
@@ -31,27 +31,36 @@
        (mset! mat 0 y (+ (mget mat 0 (dec y)) ins-cost))))
     mat))
 
-(defn preds [x y]
-  (let [px (dec x) py (dec y)]
-    (cond
-     (and (> x 0) (> y 0)) [[px py] [px y] [x py]]
-     (> x 0) [[px y]]
-     (> y 0) [[x py]]
-     true [])))
+(defn preds [mat x y]
+  (let [px (dec x) py (dec y)
+        possible-preds (cond
+                        (and (> x 0) (> y 0)) [[px py] [px y] [x py]]
+                        (> x 0) [[px y]]
+                        (> y 0) [[x py]]
+                        true [])
+        v (mget mat x y)]
+    (filter (fn [[prx pry]]
+              (let [prv (mget mat prx pry)]
+                (cond
+                 (and (== prx (dec x)) (== pry (dec y))) (< (abs (- v prv)) 1.0)
+                 (== prx (dec x)) (<= (abs (- v prv)) ins-cost)
+                 (== pry (dec y)) (<= (abs (- v prv)) del-cost))))
+            possible-preds)))
 
 (defn- norm-score ^double [s l1 l2]
-  (cond
-   (and (== l1 0.0) (== l2 0.0)) s
-   true (/ s (* 2 (min (* (inc l1) ins-cost) (* (inc l2) del-cost))))))
+  (if (and (== l1 0) (== l2 0))
+    s
+    (/ s (+ (* l1 ins-cost)
+            (* l2 del-cost)))))
 
 (defn best-path [mat]
   (let [[ml nl] (shape mat)
         m (dec ml) n (dec nl)]
     (loop [x m, y n,
-           path (list [m n (norm-score (mget mat m n) m n)])]
+           path (list [m n (norm-score (mget mat m n) m n) :end])]
       (if (and (== x 0.0) (== y 0.0))
         path
-        (let [[mx my] (apply min-key #(mget mat (first %) (second %)) (preds x y))]
+        (let [[mx my] (apply min-key #(mget mat (first %) (second %)) (preds mat x y))]
           (recur mx my
                  (conj path [mx my
                              (norm-score (mget mat mx my) mx my)
@@ -96,12 +105,12 @@
                   i-dist (if (< i-dist-0 1.0) i-dist-0 Double/POSITIVE_INFINITY)
                   ; del-cost/ins-cost are 0 at the edges.
                   ; this is because prefixes are fine.
-                  dc (if (= ny n) 0 del-cost)
-                  ic (if (= nx m) 0 ins-cost)
+                  dc del-cost
+                  ic ins-cost
                   best-dist (min
-                             (+ i-dist (get-cost mat m n warp-window px py))
-                             (+ dc (get-cost mat m n warp-window px ny))
-                             (+ ic (get-cost mat m n warp-window nx py)))]
+                             (+ i-dist (mget mat px py))
+                             (+ dc (mget mat px ny))
+                             (+ ic (mget mat nx py)))]
               (mset! mat
                      nx ny
                      best-dist)))
@@ -116,6 +125,25 @@
           l2 (count t2)
           [dist path] (distance t1 t2 doms)]
       (norm-score dist l1 l2))))
+
+;;; gives a vector of distances of length |s1|.
+;;; this includes the parts of the path that are insertions
+;;; and matches, but not deletions, so this vector is "clocked"
+;;; to s1.
+(defn diss-t [s1 s2 doms]
+  (let [t1 (:inputs s1)
+        t2 (:inputs s2)
+        len (count t1)
+        vct (new-vector len)]
+    (if (= (:id s1) (:id s2))
+      (fill vct 0.0)
+      (let [[dist path] (distance t1 t2 doms)
+            fwd-path (filter #(not (= (get % 3) :delete)) path)]
+        (when-not (== (count fwd-path) (inc len)) (println "path " fwd-path " is " (count fwd-path) ", not " (inc len)))
+        ;(println (:label s1) (:label s2))
+        ;(println "P:" path)
+        ;(println "F:" fwd-path)
+        (assign vct (map #(get % 2) fwd-path))))))
 
 (defn tst [lim]
   (time (doall
@@ -137,3 +165,25 @@
                             doms))])))))
 
 (tst 18)
+
+(defn tst-t [lim]
+  (time (doall
+         (let [dur 10
+               logs (read-logs [[:a (/ lim 4) dur {[1 [:a] [:a]] 1.0}]
+                                [:b (/ lim 4) (+ dur 5) {[1 [:b] [:a]] 1.0}]
+                                [:c (/ lim 4) dur {[1 [:a] [:b]] 1.0}]
+                                [:d (/ lim 4) dur {[1 [:a] [:a]] 0.5 [1 [:b] [:a]] 0.5}]]
+                               (hash-set :system :random)
+                               nil)
+               vs (:traces logs)
+               doms (:domains logs)
+               vss (vec (keys vs))]
+           (for [x (range 0 lim)
+                 y (range (inc x) lim)
+                 :let [id1 (get vss x), id2 (get vss y)]]
+             [x y
+              (diss-t (get vs id1)
+                      (get vs id2)
+                      doms)])))))
+
+(tst-t 8)
