@@ -2,7 +2,6 @@
 /lib
 /classes
 /checkouts
-/maven_repository
 pom.xml
 *.jar
 *.class

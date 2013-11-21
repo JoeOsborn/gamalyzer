@@ -5,9 +5,10 @@
             [gamalyzer.cmp.tt :refer [pivot-distances]]
             [clojure.core.matrix :refer [set-current-implementation mutable
                                          slices to-nested-vectors new-array
-                                         mget shape square dimension-count
-                                         submatrix to-vector mset! get-row]])
-  (:import (java.util UUID)))
+                                         mget mset! shape square dimension-count
+                                         submatrix to-nested-vectors get-row]])
+  (:import [java.util UUID]
+           [mdsj MDSJ]))
 
 (set-current-implementation :vectorz)
 
@@ -46,6 +47,9 @@
           {}
           (slices mat 1)))
 
+(defn x-coords [kxk]
+  (vec (first (MDSJ/stressMinimization (into-array (map double-array kxk)) 1))))
+
 
 (defn test-data [n k dur]
   (let [logs (read-logs [[:a (/ n 3) dur {[1 [:a] [:a]] 1.0}]
@@ -61,7 +65,10 @@
         pivot-mat (kxnxd->kxkxd msq pivot-ids (vals vs))
         similars (tally-similars msq pivot-ids vs)
         pivot-diffs-t (map to-nested-vectors (slices pivot-mat 2))]
-    [(map :label pivots) (map #(assoc % :similar-count (get similars (:id %))) pivots) pivot-diffs-t]))
+    [(map :label pivots)
+     (map #(assoc % :similar-count (get similars (:id %))) pivots)
+     pivot-diffs-t
+     (x-coords (last pivot-diffs-t))]))
 
 (test-data 100 3 5)
 
