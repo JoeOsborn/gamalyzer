@@ -33,8 +33,19 @@
                   mat-kxn (get-row (get-row (submatrix kxnxd [[pi 1] [pti 1] nil]) 0) 0)]]
       ;(println "pi" pi "(" (:label (nth traces (nth pivot-trace-indices pi))) ")->" pti "(" (:label (nth traces pti)) "):" mat-kxn)
       (assign-vec-at! kxkxd pi pj mat-kxn))
-    (println kxkxd)
     kxkxd))
+
+(defn tally-similars [mat pivot-ids traces]
+  (reduce (fn [sims col-n]
+            (let [min-pivot (apply min-key
+                                   #(mget col-n % (dec (dimension-count col-n 1)))
+                                   (range 0 (dimension-count col-n 0)))
+                  min-pivot-id (nth pivot-ids min-pivot)
+                  so-far (get sims min-pivot-id)]
+              (assoc sims min-pivot-id (if so-far (+ so-far 1) 1))))
+          {}
+          (slices mat 1)))
+
 
 (defn test-data [n k dur]
   (let [logs (read-logs [[:a (/ n 3) dur {[1 [:a] [:a]] 1.0}]
@@ -48,8 +59,9 @@
         pivots (map #(get vs %) pivot-ids)
         msq (square mat)
         pivot-mat (kxnxd->kxkxd msq pivot-ids (vals vs))
+        similars (tally-similars msq pivot-ids vs)
         pivot-diffs-t (map to-nested-vectors (slices pivot-mat 2))]
-    [(map :label pivots) pivots pivot-diffs-t]))
+    [(map :label pivots) (map #(assoc % :similar-count (get similars (:id %))) pivots) pivot-diffs-t]))
 
 (test-data 100 3 5)
 
