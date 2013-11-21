@@ -14,9 +14,12 @@
                  [org.clojure/math.numeric-tower "0.0.2"]
                  [net.mikera/vectorz-clj "0.17.0"]
                  [net.mikera/core.matrix "0.15.0"]
-                 [de.uni-konstanz.inf.algo/mdsj "0.2"]]
+                 [de.uni-konstanz.inf.algo/mdsj "0.2"]
+                 [org.clojure/clojurescript "0.0-2030"]]
   :repositories {"project" "file:maven_repository"}
-  :plugins [[lein-ring "0.8.7"]]
+  :plugins [[lein-ring "0.8.7"]
+            [lein-cljsbuild "1.0.0-alpha2"]]
+  :source-paths ["srv"]
   :ring {:handler gamalyzer.handler/app
          :init gamalyzer.handler/init
          :destroy gamalyzer.handler/destroy}
@@ -25,4 +28,12 @@
    {:ring
     {:open-browser? false, :stacktraces? false, :auto-reload? false}}
    :dev
-   {:dependencies [[ring-mock "0.1.5"] [ring/ring-devel "1.2.0"]]}})
+   {:dependencies [[ring-mock "0.1.5"] [ring/ring-devel "1.2.0"]]}}
+  :cljsbuild {
+    :builds [{:id "cli"
+              :source-paths ["cli"]
+              :compiler {
+                :output-to "resources/public/js/cli.js"
+                :output-dir "resources/public/js"
+                :optimizations :none
+                :source-map true}}]})

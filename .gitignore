@@ -9,6 +9,7 @@ pom.xml
 /lib/
 /classes/
 /targets/
+/target/
 .lein-deps-sum
 .nrepl-port
 

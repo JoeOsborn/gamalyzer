@@ -1,4 +1,4 @@
-(ns gamalyzer.rsrc.home
+(ns gamalyzer.rsrc.data
   (:require [compojure.core :refer :all]
 						[liberator.core :refer [resource defresource]]
             [gamalyzer.read.synth :refer [read-logs]]
@@ -72,10 +72,10 @@
 
 (test-data 100 3 5)
 
-(defresource home []
+(defresource data []
 	:available-media-types ["application/json"]
 	:handle-ok
 		(fn [ctx] (test-data 100 10 15)))
 
-(defroutes home-routes
-  (ANY "/" [] (home)))
+(defroutes data-routes
+  (ANY "/data" [] (data)))
