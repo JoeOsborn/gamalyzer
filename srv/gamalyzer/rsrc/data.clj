@@ -26,7 +26,7 @@
   ;make a new matrix with 1ds and 2ds matching up with pivots.
   ;so we need a mapping from pivots->traces
   (let [trace-indices (zipmap (map :id traces) (range))
-        pivot-trace-indices (sort (map #(get trace-indices %) pivot-ids))
+        pivot-trace-indices (map #(get trace-indices %) pivot-ids)
         kxkxd (new-array [(count pivot-ids) (count pivot-ids) (dimension-count kxnxd 2)])]
     (doseq [pi (range 0 (count pivot-trace-indices))
             pj (range 0 (count pivot-trace-indices))
@@ -66,14 +66,14 @@
         similars (tally-similars msq pivot-ids vs)
         pivot-diffs-t (map to-nested-vectors (slices pivot-mat 2))]
     [(map :label pivots)
-     (map #(assoc % :similar-count (get similars (:id %))) pivots)
+     (map #(assoc % :similar-count (or (get similars (:id %)) 0)) pivots)
      pivot-diffs-t
      (x-coords (last pivot-diffs-t))]))
 
-(test-data 100 3 5)
+(test-data 100 10 15)
 
 (defresource data []
-	:available-media-types ["application/json"]
+	:available-media-types ["application/edn"]
 	:handle-ok
 		(fn [ctx] (test-data 100 10 15)))
 

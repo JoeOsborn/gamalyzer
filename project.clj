@@ -9,13 +9,14 @@
                  [compojure "1.1.5"]
                  [hiccup "1.0.4"]
                  [ring "1.2.1"]
-                 [liberator "0.9.0"]
+                 [liberator "0.10.0"]
                  [org.clojars.achim/multiset "0.1.0-SNAPSHOT"]
                  [org.clojure/math.numeric-tower "0.0.2"]
                  [net.mikera/vectorz-clj "0.17.0"]
                  [net.mikera/core.matrix "0.15.0"]
                  [de.uni-konstanz.inf.algo/mdsj "0.2"]
-                 [org.clojure/clojurescript "0.0-2030"]]
+                 [org.clojure/clojurescript "0.0-2030"]
+                 [net.drib/strokes "0.5.1"]]
   :repositories {"project" "file:maven_repository"}
   :plugins [[lein-ring "0.8.7"]
             [lein-cljsbuild "1.0.0-alpha2"]]
@@ -33,7 +34,7 @@
     :builds [{:id "cli"
               :source-paths ["cli"]
               :compiler {
-                :output-to "resources/public/js/cli.js"
+                :output-to "resources/public/js/gamalyzer.js"
                 :output-dir "resources/public/js"
                 :optimizations :none
                 :source-map true}}]})

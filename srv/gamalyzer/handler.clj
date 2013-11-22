@@ -15,6 +15,7 @@
   (println "gamalyzer is shutting down"))
 
 (defroutes app-routes
+  (route/resources "/" )
   (route/not-found "Not Found"))
 
 (def app
