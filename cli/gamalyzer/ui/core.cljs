@@ -37,7 +37,16 @@
 
 (def stroke-width (.. (d3.scale.linear) (domain [0 1]) (range [0 5])))
 
-(defn pick-color [values] "black")
+(when-not val-colors (def val-colors {}))
+(when-not cur-hue (def cur-hue 0))
+(defn pick-color [values]
+  (when-not (get val-colors values)
+    (set! cur-hue (+ cur-hue 144))
+    (set! val-colors
+          (assoc val-colors
+            values
+            (d3.hsl cur-hue 0.8 0.8))))
+  (.toString (get val-colors values)))
 
 (defn add-layers! [traces xs-per-layer]
   (.. y (domain [0 (count xs-per-layer)]))
@@ -66,7 +75,9 @@
               (enter)
               (append "svg:path")
               (attr "class" "trace_line")
-              (attr "stroke" "gray")
+              (attr "stroke" "currentColor")
+              (attr "fill" "currentColor")
+              (attr "color" "gray")
               (attr "stroke-width" (fn [d i] (stroke-width (:similar-count d))))
               (attr "d" (fn [d] (input-line (map :position (:inputs d))))))
         each-trace
@@ -78,6 +89,8 @@
              (append "svg:path")
              (attr "class" "input")
              (attr "data" identity)
+             (attr "stroke" "currentColor")
+             (attr "fill" "currentColor")
              (attr "color" (fn [d] (pick-color (:vals d))))
              (attr
               "transform"
