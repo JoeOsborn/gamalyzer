@@ -30,25 +30,55 @@
         sym (pick-symbol det)]
     (.. (d3.svg.symbol) (type sym))))
 
+(def input-line (d3.svg.line))
+
+(defn input-positions [xs-per-layer i]
+  (map-indexed (fn [j layer] [(x (nth layer i)) (y j)]) xs-per-layer))
+
+(def stroke-width (.. (d3.scale.linear) (domain [0 1]) (range [0 5])))
+
+(defn pick-color [values] "black")
+
 (defn add-layers! [traces xs-per-layer]
   (.. y (domain [0 (count xs-per-layer)]))
-  (let [trace-layers
+  (.. stroke-width (domain [0 (apply max (map :similar-count traces))]))
+  (let [traces-with-positions
+         (map-indexed (fn [i t]
+                        (assoc t
+                          :inputs
+                          (map-indexed (fn [j inp]
+                                 (let [ix (nth (nth xs-per-layer j) i)]
+                                   (assoc inp :position [(x ix) (y j)])))
+                               (:inputs t))))
+                      traces)
+        trace-layers
          (.. svg
              (selectAll ".trace")
-             (data (vec traces))
+             (data (vec traces-with-positions))
              (enter)
              (append "svg:g")
-             (attr "class" "trace")
-             (attr "data" (fn [d i] (nth (last xs-per-layer) i))))
+             (attr "class" "trace"))
+        each-line
+          (.. trace-layers
+              ;;TODO: figure out how to get these to sit in the "g"s properly.
+              (selectAll ".trace_line")
+              (data (fn [d i] [d]))
+              (enter)
+              (append "svg:path")
+              (attr "class" "trace_line")
+              (attr "stroke" "gray")
+              (attr "stroke-width" (fn [d i] (stroke-width (:similar-count d))))
+              (attr "d" (fn [d] (input-line (map :position (:inputs d))))))
         each-trace
-         (.. trace-layers
+         (.. svg
+             (selectAll ".trace")
              (selectAll ".input")
-             (attr "class" "input")
              (data (fn [d i] (:inputs d)))
              (enter)
              (append "svg:path")
              (attr "class" "input")
-             (attr "data" (fn [d] (str (pick-symbol (:det d)) d)))
+             (attr "data" identity)
+             (attr "color" (fn [d] (pick-color (:vals d))))
              (attr
               "transform"
               (fn [d i j]
