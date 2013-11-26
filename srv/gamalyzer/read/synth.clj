@@ -23,8 +23,9 @@
 
 (defn- make-traces [k how-many how-long model]
   (reduce (fn [so-far _]
-            (let [uuid (.toString (UUID/randomUUID))]
-              (assoc so-far uuid (make-trace k uuid how-long model))))
+            (let [uuid (.toString (UUID/randomUUID))
+                  how-long-here (if (sequential? how-long) (let [[lo hi] how-long] (+ lo (* (rand) (- hi lo)))) how-long)]
+              (assoc so-far uuid (make-trace k uuid how-long-here model))))
           (hash-map)
           (range 0 how-many)))
 

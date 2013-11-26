@@ -47,14 +47,32 @@
           {}
           (slices mat 1)))
 
+(defn normalize-and-align [positions]
+  (let [low (apply min positions)
+        high (apply max positions)
+        delta (- high low)
+        scale (/ 1.0 delta)
+        scaled (map #(* % scale) positions)
+        mean (/ (reduce + 0 scaled) (count scaled))
+        zero-centered (map #(- % mean) scaled)
+        zlow (apply min zero-centered)
+        half-centered (map #(- % zlow) zero-centered)]
+    half-centered))
+
 (defn x-coords [kxk]
-  (vec (first (MDSJ/stressMinimization (into-array (map double-array kxk)) 1))))
+  (normalize-and-align (vec (first (MDSJ/stressMinimization (into-array (map double-array kxk)) 1)))))
 
 
 (defn test-data [n k dur]
-  (let [logs (read-logs [[:a (/ n 3) dur {[1 [:a] [:a]] 1.0}]
-                         [:b (/ n 3) dur {[1 [:b] [:a]] 1.0}]
-                         [:c (/ n 3) dur {[1 [:a] [:b]] 1.0}]]
+  (let [logs (read-logs [[:a (/ n 12) [dur (* dur 1.25)] {[1 [:a] [:a]] 1.0}]
+                         [:b (/ n 12) [dur (* dur 1.25)] {[1 [:b] [:a]] 1.0}]
+                         [:c (/ n 12) [dur (* dur 1.25)] {[1 [:a] [:b]] 1.0}]
+                         [:ab (/ n 4) [dur (* dur 1.25)] {[1 [:a] [:a]] 0.75
+                                                          [1 [:b] [:a]] 0.25}]
+                         [:bc (/ n 4) [dur (* dur 1.25)] {[1 [:b] [:a]] 0.75
+                                                          [1 [:a] [:b]] 0.25}]
+                         [:ac (/ n 4) [dur (* dur 1.25)] {[1 [:a] [:a]] 0.75
+                                                          [1 [:a] [:b]] 0.25}]]
                         (hash-set :system :random)
                         nil)
         vs (:traces logs)
@@ -70,12 +88,12 @@
      pivot-diffs-t
      (x-coords (last pivot-diffs-t))]))
 
-(test-data 100 10 15)
+(test-data 100 20 5)
 
 (defresource data []
 	:available-media-types ["application/edn"]
 	:handle-ok
-		(fn [ctx] (test-data 100 10 15)))
+		(fn [ctx] (test-data 100 20 15)))
 
 (defroutes data-routes
   (ANY "/data" [] (data)))

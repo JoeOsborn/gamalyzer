@@ -56,8 +56,8 @@
         new-dds (expand-domains dds (:vals input) [0])]
     (assoc doms det new-dds)))
 
-(defn expand-domain* [traces doms]
-  (reduce #(expand-domain %2 %1) doms traces))
+(defn expand-domain* [inputs doms]
+  (reduce #(expand-domain %2 %1) doms inputs))
 
 (defn expand-domain** [traces doms]
   (reduce #(expand-domain* (:inputs %2) %1) doms (vec (vals traces))))

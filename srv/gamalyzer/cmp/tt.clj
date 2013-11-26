@@ -75,3 +75,6 @@
 
 (tst 100 10)
 
+(let [traces (reduce #(assoc %1 (:id %2) %2) {} [{:similar-count 53, :id "d73114ff-a682-4709-ba0a-f0f061e2f74f", :inputs [{:time 0, :player 1, :det [:a], :vals [:a]} {:time 1, :player 1, :det [:a], :vals [:a]} {:time 2, :player 1, :det [:a], :vals [:a]} {:time 3, :player 1, :det [:b], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:a]}], :label :ab} {:similar-count 33, :id "57e06a91-a650-4532-92d7-b19dae4d096e", :inputs [{:time 0, :player 1, :det [:b], :vals [:a]} {:time 1, :player 1, :det [:b], :vals [:a]} {:time 2, :player 1, :det [:b], :vals [:a]} {:time 3, :player 1, :det [:b], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:b]}], :label :bc} {:similar-count 16, :id "189b789c-78a3-4934-a1ac-da2fa5c5ccd8", :inputs [{:time 0, :player 1, :det [:a], :vals [:b]} {:time 1, :player 1, :det [:a], :vals [:b]} {:time 2, :player 1, :det [:a], :vals [:b]} {:time 3, :player 1, :det [:a], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:a]}], :label :ac}])
+      [pivots pivot-mat] (pivot-distances 3 traces (gamalyzer.data.input/expand-domain** traces (gamalyzer.data.input/make-domains)))]
+  (map clojure.core.matrix/to-nested-vectors (clojure.core.matrix/slices pivot-mat 2)))
