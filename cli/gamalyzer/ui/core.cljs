@@ -107,7 +107,7 @@
                    (size [1 (count slices)])
                    (gravity 0)
                    (charge 0)
-                   (linkStrength 0.001))
+                   (linkStrength 0.0001))
         lnodes (mapcat (fn [t] (map-indexed (fn [i xv] {:x xv :t t :trace i})
                                             init-xs))
                        (range 0 (count slices)))
@@ -141,7 +141,7 @@
     (.nodes layout lnodes-js)
     (.links layout llinks-js)
     (.start layout)
-    (dotimes [_ 5] (.tick layout))
+    (dotimes [_ 100] (.tick layout))
     (.stop layout)
     (partition (count init-xs) (map #(get % "x") (js->clj lnodes-js)))))
 

@@ -64,15 +64,12 @@
 
 
 (defn test-data [n k dur]
-  (let [logs (read-logs [[:a (/ n 12) [dur (* dur 1.25)] {[1 [:a] [:a]] 1.0}]
-                         [:b (/ n 12) [dur (* dur 1.25)] {[1 [:b] [:a]] 1.0}]
-                         [:c (/ n 12) [dur (* dur 1.25)] {[1 [:a] [:b]] 1.0}]
-                         [:ab (/ n 4) [dur (* dur 1.25)] {[1 [:a] [:a]] 0.75
-                                                          [1 [:b] [:a]] 0.25}]
-                         [:bc (/ n 4) [dur (* dur 1.25)] {[1 [:b] [:a]] 0.75
-                                                          [1 [:a] [:b]] 0.25}]
-                         [:ac (/ n 4) [dur (* dur 1.25)] {[1 [:a] [:a]] 0.75
-                                                          [1 [:a] [:b]] 0.25}]]
+  (let [logs (read-logs [[:a (/ n 4) [dur (* dur 1.25)] {[1 [:a] [:a]] 1.0}]
+                         [:b (/ n 4) [dur (* dur 1.25)] {[1 [:b] [:a]] 1.0}]
+                         [:c (/ n 4) [dur (* dur 1.25)] {[1 [:a] [:b]] 1.0}]
+                         [:ac (/ n 4) [dur (* dur 1.25)] {[1 [:a] [:a]] 0.4
+                                                          [1 [:a] [:b]] 0.4
+                                                          [1 [:b] [:a]] 0.2}]]
                         (hash-set :system :random)
                         nil)
         vs (:traces logs)
@@ -88,7 +85,7 @@
      pivot-diffs-t
      (x-coords (last pivot-diffs-t))]))
 
-(test-data 100 20 5)
+(test-data 100 10 5)
 
 (defresource data []
 	:available-media-types ["application/edn"]
