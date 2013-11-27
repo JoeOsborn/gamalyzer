@@ -6,19 +6,41 @@
 (defn log [& stuff]
   (. js/console (log (apply str stuff)))
   (last stuff))
-
-(def width 500)
-(def height 600)
-
 (set! *print-fn* log)
 
-(def link-threshold 0.8)
-(defn link-strength [l] 0.0025) ;(* (- 1 (link-distance l)) 0.01))
+(def width 800)
+(def height 800)
+
+(defn make-slider! [id mn v mx st f]
+  (when (= 0 (.size (.select d3 (str "#" id))))
+    (do (.. d3
+            (select "body")
+            (append "div")
+            (attr {:class "slider" :id id})
+            (call (.. (d3.slider)
+                      (axis true)
+                      (min mn)
+                      (value v)
+                      (max mx)
+                      (step st)
+                      (on "slide" #(f %2)))))
+      (.. d3
+          (select (str "#" id))
+          (insert "div" ":first-child")
+          (attr "class" "slider-label")
+          (text id)))))
+
+(make-slider! "width" 400 width 2000 100 (fn [w] (set! width w) (kick! fetched-data)))
+(make-slider! "height" 400 height 2000 100 (fn [h] (set! height h) (kick! fetched-data)))
+
+(def link-threshold 1.0)
+(def link-strength 0.0025) ;(fn [l] (* (- 1 (link-distance l)) 0.01)))
 (defn link-distance [l] (.-distance l))
 (def iterations 100)
 
-(when-not svg (def svg (.. d3 (select "body") (append "svg")
-                           (attr {:width width :height height}))))
+(when-not svg (.. d3 (select "body") (append "svg")))
+(def svg (.select d3 "body > svg"))
+(.property svg {:width width :height height})
 
 (def x (.. (d3.scale.linear) (domain [0 1]) (range [10 (- width 10)])))
 (def y (.. (d3.scale.linear) (domain [0 1]) (range [(- height 10) 10])))
@@ -172,7 +194,9 @@
     (partition (count init-xs) (map #(.-x %) lnodes-js))))
 
 (defn kick! [root]
-  (.attr (.select d3 "svg") {:width width :height height})
+  (.property (.select d3 "svg") {:width width :height height})
+  (set! x (.. (d3.scale.linear) (domain [0 1]) (range [10 (- width 10)])))
+  (set! y (.. (d3.scale.linear) (domain [0 1]) (range [(- height 10) 10])))
   (let [pivots (nth root 1)
         ;pivots are the traces (lists of data points)
         slices (vec (nth root 2))
@@ -181,7 +205,7 @@
     ;init-xs are the x coordinates
     (.. y (domain [0 (count slices)]))
     (.. stroke-width (domain [0 (apply max (map :similar-count pivots))]))
-    (let [xs (layout-xs init-xs slices)]
+    (let [xs (time (layout-xs init-xs slices))]
       (time (add-layers! pivots xs)))))
 
 (if fetched-data

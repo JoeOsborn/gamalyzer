@@ -1,11 +1,24 @@
 body {
-    color: #555;
-    font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
-    font-size: 13px;
+  color: #555;
+  font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+  font-size: 13px;
 }
 
 h1 {
-    text-align: center;
+  text-align: center;
 }
 
+.d3-slider {
+  margin-bottom: 2.5em;
+  width: 400px;
+  left: 80px;
+}
+.slider-label {
+  width: 100px;
+  margin-left: -80px;
+  margin-bottom: 0px;
+}
+.d3-slider-axis-bottom {
+  top: 0em;
+}
 .left { fill:red; }
