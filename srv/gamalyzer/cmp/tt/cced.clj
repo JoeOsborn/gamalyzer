@@ -144,8 +144,8 @@
       (fill vct 0.0)
       (let [[dist path] (distance t1 t2 doms)
             fwd-path (resample-path path len)]
-;            fwd-path (filter #(not (= (get % 3) :delete)) path)]
-        (when-not (== (count fwd-path) len) (println "path " fwd-path " is " (count fwd-path) ", not " (inc len)))
+;            fwd-path (map #(get % 2) (filter #(not (= (get % 3) :delete)) path))]
+;        (when-not (== (count fwd-path) len) (println "path " fwd-path " is " (count fwd-path) ", not " (inc len)))
         ;(println (:label s1) (:label s2))
         ;(println "P:" path)
         ;(println "F:" fwd-path)

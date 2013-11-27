@@ -90,7 +90,7 @@
 (defresource data []
 	:available-media-types ["application/edn"]
 	:handle-ok
-		(fn [ctx] (test-data 100 20 15)))
+		(fn [ctx] (test-data 100 10 30)))
 
 (defroutes data-routes
   (ANY "/data" [] (data)))

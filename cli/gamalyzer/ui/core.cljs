@@ -7,8 +7,16 @@
   (. js/console (log (apply str stuff)))
   (last stuff))
 
-(def width 800)
-(def height 800)
+(def width 500)
+(def height 600)
+
+(set! *print-fn* log)
+
+(def link-threshold 0.8)
+(defn link-strength [l] 0.0025) ;(* (- 1 (link-distance l)) 0.01))
+(defn link-distance [l] (.-distance l))
+(def iterations 100)
+
 (when-not svg (def svg (.. d3 (select "body") (append "svg")
                            (attr {:width width :height height}))))
 
@@ -35,28 +43,37 @@
 (def stroke-width (.. (d3.scale.linear) (domain [0 1]) (range [0 5])))
 
 (when-not val-colors (def val-colors {}))
-(when-not cur-hue (def cur-hue 0))
+(when-not cur-hue (def cur-hue 60))
+(defn wrap [n l]
+  (cond
+   (> n l) (wrap (- n l) l)
+   (< n 0) (wrap (+ n l) l)
+   true n))
+
 (defn pick-color [values]
   (when-not (get val-colors values)
-    (set! cur-hue (+ cur-hue 144))
+    (set! cur-hue (wrap (+ cur-hue 144) 360))
     (set! val-colors
           (assoc val-colors
             values
-            (d3.hsl cur-hue 0.8 0.8))))
+            (d3.hsl cur-hue 0.8 0.6))))
   (.toString (get val-colors values)))
 
 (defn trace-id [t] (get t :id))
 
 (defn add-layers! [traces xs-per-layer]
   (let [traces-with-positions
-        (map-indexed (fn [i t]
-                       (assoc t
-                         :inputs
-                         (map-indexed (fn [j inp]
-                                        (let [ix (nth (nth xs-per-layer j) i)]
-                                          (assoc inp :position [(x ix) (y j)])))
-                                      (:inputs t))))
-                     traces)
+        (map-indexed
+         (fn [i t]
+           (assoc t
+             :inputs
+             (map-indexed (fn [j inp]
+                            (let [ix (nth (nth xs-per-layer j) i)]
+                              (assoc inp
+                                :position
+                                (array (x ix) (y j)))))
+                          (:inputs t))))
+         traces)
         trace-layers (.. svg
                          (selectAll ".trace")
                          (data (vec traces-with-positions) trace-id))
@@ -70,36 +87,67 @@
         _ (.. each-line
               (enter)
               (append "svg:path")
-              (attr "class" "trace_line")
-              (attr "stroke" "currentColor")
-              (attr "fill" "none")
-              (attr "color" "gray")
-              (attr "stroke-width" (fn [d i] (stroke-width (:similar-count d))))
-              (attr "d" (fn [d] (input-line (map :position (:inputs d))))))
+              (attr {:class "trace_line"
+                     :stroke "currentColor"
+                     :fill "none"
+                     :color "gray"}))
+        _ (.. each-line
+              (attr {:stroke-width
+                     (fn [d i] (stroke-width (:similar-count d)))
+                     :d
+                     (fn [d] (input-line (map :position (:inputs d))))}))
         each-trace (.. trace-layers
                        (selectAll ".input")
                        (data (fn [d i] (:inputs d))))
         _ (.. each-trace
               (enter)
               (append "svg:path")
-              (attr "class" "input")
-              (attr "data" identity)
-              (attr "stroke" "currentColor")
-              (attr "fill" "currentColor")
-              (attr "color" (fn [d] (pick-color (:vals d))))
-              (attr
-               "transform"
-               (fn [d i j]
-                 (str "translate("
-                      (x (nth (nth xs-per-layer i) j))
-                      ","
-                      (y i)
-                      ")")))
-              (attr "d" (.type (d3.svg.symbol) (fn [d] (pick-symbol (:det d))))))]
-    each-trace))
+              (attr {:class "input"
+                     :stroke "currentColor"
+                     :fill "currentColor"}))
+        _ (.. each-trace
+              (attr {:color (fn [d] (pick-color (:vals d)))
+                     :transform
+                     (fn [d i j]
+                       (str "translate("
+                            (nth (:position d) 0)
+                            ","
+                            (nth (:position d) 1)
+                            ")"))
+                     :d (.type (d3.svg.symbol)
+                               (fn [d] (pick-symbol (:det d))))}))]
+    trace-layers))
 
 (defn pairs [s] (mapcat (fn [l] (map (fn [r] [l r]) s)) s))
 (defn clip [l m h] (cond (< m l) l (> m h) h true m))
+
+(defn make-nodes [init-xs slices node-index]
+  (let [ar (object-array (* (count slices) (count init-xs)))]
+    (doseq [t (range 0 (count slices))
+            i (range 0 (count init-xs))
+            :let [xv (nth init-xs i)
+                  obj (js-obj "x" xv "t" t "trace" i)
+                  idx (node-index i t)]]
+      (aset ar idx obj))
+    ar))
+
+(defn intra-layer-links [init-xs slices node-index]
+  (let [ar (array)]
+    (doseq [t (range 0 (count slices))
+            :let [layer (nth slices (max 1 t))]
+            si (range 0 (count layer))
+            :let [s1l (nth layer si)]
+            sj (range 0 (count s1l))
+            :when (not (= si sj))
+            :let [sqdist (nth s1l sj)
+                  dist (.sqrt js/Math sqdist)]
+            :when (< dist link-threshold)
+            :let [obj (js-obj "source" (node-index si t)
+                              "target" (node-index sj t)
+                              "distance" (identity dist))
+                  idx (count ar)]]
+      (aset ar idx obj))
+    ar))
 
 (defn layout-xs [init-xs slices]
   (let [;_ (log slices)
@@ -107,54 +155,40 @@
                    (size [1 (count slices)])
                    (gravity 0)
                    (charge 0)
-                   (linkStrength 0.0001))
-        lnodes (mapcat (fn [t] (map-indexed (fn [i xv] {:x xv :t t :trace i})
-                                            init-xs))
-                       (range 0 (count slices)))
+                   (linkStrength link-strength))
         node-index (fn [s t] (+ s (* t (count init-xs))))
-;        inter-layer-distance 1
-;        llinks-traces (mapcat (fn [si] (map (fn [t] {:source (node-index si (dec t))
-;                                                     :target (node-index si t)
-;                                                     :distance (x inter-layer-distance)})
-;                                            (range 1 (count slices))))
-;                              (range 0 (count init-xs)))
-        llinks-layers (mapcat (fn [[si sj]] (if (== si sj)
-                                              []
-                                              (map (fn [t]
-                                              ;       (when-not (== (get-in slices [(if (= t 0) 1 t) si sj])
-                                              ;                     (get-in slices [(if (= t 0) 1 t) sj si]))
-                                              ;         (log "neq in slices " t " " si " " sj " = " (nth slices t) "----" (nth (nth slices t) si) "----" (nth (nth (nth slices t) si) sj) " vs " (nth (nth slices t) sj) "----" (nth (nth (nth slices t) sj) si)))
-                                                     {:source (node-index si t)
-                                                      :target (node-index sj t)
-                                                      :distance (/ (+ (get-in slices [(if (= t 0) 1 t) si sj])
-                                                                      (get-in slices [(if (= t 0) 1 t) sj si])) 2)})
-                                                   (range 0 (count slices)))))
-                              (pairs (range 0 (count init-xs))))
-        ;_ (log llinks-layers)
-        lnodes-js (clj->js lnodes)
-        llinks-js (clj->js llinks-layers)]
-;        llinks-js (clj->js (concat llinks-traces llinks-layers))]
+        lnodes-js (make-nodes init-xs slices node-index)
+        llinks-layers-js (intra-layer-links init-xs slices node-index)]
     (.on layout "tick" (fn []
                          (doseq [n lnodes-js]
                            (set! (.-y n) (.-t n))
                            (set! (.-x n) (clip 0 (.-x n) 1)))))
     (.nodes layout lnodes-js)
-    (.links layout llinks-js)
+    (.links layout llinks-layers-js)
+    (.linkDistance layout link-distance)
     (.start layout)
-    (dotimes [_ 100] (.tick layout))
+    (dotimes [_ iterations] (.tick layout))
     (.stop layout)
-    (partition (count init-xs) (map #(get % "x") (js->clj lnodes-js)))))
+    (partition (count init-xs) (map #(.-x %) lnodes-js))))
 
-(strokes/fetch-edn
- "data"
- (fn [err root]
-   (let [pivots (nth root 1)
-         ;pivots are the traces (lists of data points)
-         slices (vec (nth root 2))
-         ;slices are the dissimilarity matrices
-         init-xs (nth root 3)]
-         ;init-xs are the x coordinates
-     (.. y (domain [0 (count slices)]))
-     (.. stroke-width (domain [0 (apply max (map :similar-count pivots))]))
-     (add-layers! pivots (layout-xs init-xs slices))
-     )))
+(defn kick! [root]
+  (.attr (.select d3 "svg") {:width width :height height})
+  (let [pivots (nth root 1)
+        ;pivots are the traces (lists of data points)
+        slices (vec (nth root 2))
+        ;slices are the dissimilarity matrices
+        init-xs (nth root 3)]
+    ;init-xs are the x coordinates
+    (.. y (domain [0 (count slices)]))
+    (.. stroke-width (domain [0 (apply max (map :similar-count pivots))]))
+    (let [xs (layout-xs init-xs slices)]
+      (time (add-layers! pivots xs)))))
+
+(if fetched-data
+  (kick! fetched-data)
+  (do (strokes/fetch-edn
+   "data"
+   (fn [err root]
+     (log "load")
+     (set! fetched-data root)
+     (kick! fetched-data)))))
