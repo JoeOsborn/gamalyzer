@@ -12,11 +12,13 @@
 (def height 400)
 
 (when-not info
-  (def info (.. d3
-                (select "body")
-                (append "div")
-                (attr "id" "info")
-                (style "opacity" 0))))
+  (do
+    (def info (.. d3
+                  (select "body")
+                  (append "div")
+                  (attr "id" "info")
+                  (style "opacity" 0)))
+    (.append info "table")))
 
 (defn make-slider! [id mn v mx st f]
   (when (= 0 (.size (.select d3 (str "#" id))))
@@ -50,6 +52,22 @@
 (def svg (.select d3 "body > svg"))
 (.property svg {:width width :height height})
 
+(defn get-by [pred s]
+  (first (filter pred s)))
+
+(defn pad-times [symbols-by-trace min-t max-t]
+  (map (fn [inputs]
+         (let [id (:id (first inputs))]
+           (reverse (sort-by :time (map (fn [t]
+                                 (or (get-by #(== (:time %) t) inputs) {:time t :dummy true :id id}))
+                               (range min-t max-t))))))
+       symbols-by-trace))
+
+(defn vectorize [s]
+  (if (sequential? s)
+    (into [] (map vectorize s))
+    s))
+
 (defn tip-mouse-move [d i]
   (let [e d3.event
         svg-element (.getElementById js/document "svg")
@@ -63,7 +81,6 @@
         max-x (+ ex radius)
         min-t (max 0 (.round js/Math (.invert y (+ ey radius))))
         max-t (.round js/Math (.invert y (- ey radius)))
-        _ (log "min: " min-t " max: " max-t)
         symbols-in-t (mapcat (fn [t] (mapcat (fn [trace]
                                                (if (> (count (:inputs trace)) t)
                                                  [(assoc
@@ -74,42 +91,35 @@
                              (reverse (range min-t max-t)))
         symbols-in-x (filter #(<= min-x (nth (:position %) 0) max-x)
                              symbols-in-t)
-        symbols-by-trace (vec (map vec (partition-by :id symbols-in-x)))
-        x-count (count symbols-by-trace)
-        max-t-count (when (> x-count 0) (apply max-key count symbols-by-trace))]
-    (if (> x-count 0)
+        symbols-by-trace (vec (vals (group-by #(:id %) symbols-in-x)))
+        min-found-t (when-not (empty? symbols-in-x) (apply min (map :time symbols-in-x)))
+        max-found-t (when-not (empty? symbols-in-x) (apply max (map :time symbols-in-x)))
+        padded-symbols-by-trace (when-not (or (nil? min-found-t) (nil? max-found-t)) (pad-times symbols-by-trace min-found-t max-found-t))
+        traces-by-time (d3.transpose (vectorize padded-symbols-by-trace))]
+    (if-not (empty? symbols-in-x)
       (do
-;        (log "data are " (count symbols-by-trace) " = " (.stringify js/JSON (clj->js symbols-by-trace)) " .. " (map count symbols-by-trace))
-        #_(.. info
-            (selectAll "p")
+        (.. info
+            (select "table")
+            (selectAll "tr")
             (remove))
         (.. info
-            (selectAll "ol")
-            (remove))
-        #_(.. info
-            (selectAll "p")
-            (data #(vec symbols-by-trace))
-            (append "p")
-            (text (fn [d i] (:id (first d)))))
-        (.. info
-            (selectAll "ol")
-            (data (vec symbols-by-trace))
+            (select "table")
+            (selectAll "tr")
+            (data (vec traces-by-time))
             (enter)
-            (append "ol"))
+            (append "tr"))
         (.. info
-            (selectAll "ol")
-            (data (vec symbols-by-trace))
-            (selectAll "li")
+            (select "table")
+            (selectAll "tr")
+            (data (fn [] traces-by-time))
+            (selectAll "td")
             (data (fn [d i] d))
             (enter)
-            (append "li"))
-        (.. info
-            (selectAll "ol")
-            (data (vec symbols-by-trace))
-            (selectAll "li")
-            (data (fn [d i] d))
-            (attr "start" (fn [d i] (:time d)))
-            (text (fn [d i j] (str (:time d) ". " (:player d) " " (:det d) ":" (:vals d)))))
+            (append "td")
+            (text (fn [d]
+                    (if (:dummy d)
+                      (str (:time d)". ")
+                      (str (:time d) ". " (:player d) " " (:det d) " " (:vals d))))))
         (.style info "left" (- (.-pageX e) 8))
         (.style info "top" (- (.-pageY e) (/ (.-clientHeight (.getElementById js/document "info")) 2)))
         (.. info
@@ -117,14 +127,14 @@
             (duration 100)
             (style "opacity" 0.9)))
       (tip-mouse-out d i))))
-(defn tip-mouse-out [d i]
-  (.. info
-      (selectAll "ol")
-      (remove))
-  (.. info
-      (transition)
-      (duration 100)
-      (style "opacity" 0)))
+(defn tip-mouse-out [d i] nil)
+;  (.. info
+;      (selectAll "tr")
+;      (remove))
+;  (.. info
+;      (transition)
+;      (duration 100)
+;      (style "opacity" 0)))
 (.on svg "mouseover" tip-mouse-move)
 (.on svg "mousemove" tip-mouse-move)
 (.on svg "mouseout" tip-mouse-out)
