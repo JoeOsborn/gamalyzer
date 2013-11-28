@@ -55,18 +55,48 @@
 (defn get-by [pred s]
   (first (filter pred s)))
 
+(defn get-nearest [keyfn s i]
+  (if (and (contains? s i) (keyfn (nth s i)))
+    [i (nth s i)]
+    (loop [off 0]
+      (let [lo (- i off)
+            hi (+ i off)]
+        (cond
+         (and (contains? s lo) (keyfn (nth s lo))) [lo (nth s lo)]
+         (and (contains? s hi) (keyfn (nth s hi))) [hi (nth s hi)]
+         (and (< lo 0) (>= hi (count s))) [nil nil]
+         true (recur (inc off)))))))
+
+(defn get-nearest-position [inputs i]
+  (if-let [inp (second (get-nearest :position inputs i))]
+    (:position inp)
+    (double-array 0 0)))
+
 (defn pad-times [symbols-by-trace min-t max-t]
   (map (fn [inputs]
          (let [id (:id (first inputs))]
-           (reverse (sort-by :time (map (fn [t]
-                                 (or (get-by #(== (:time %) t) inputs) {:time t :dummy true :id id}))
-                               (range min-t max-t))))))
+           (reverse
+            (sort-by :time
+                     (map-indexed
+                      (fn [i t]
+                        (if-let [inp (get-by #(== (:time %) t) inputs)]
+                          inp
+                          {:time t
+                           :dummy true
+                           :id id
+                           :position (get-nearest-position inputs i)}))
+                      (range min-t (inc max-t)))))))
        symbols-by-trace))
 
 (defn vectorize [s]
   (if (sequential? s)
     (into [] (map vectorize s))
     s))
+
+(defn median-element [s]
+  (if (empty? s)
+    nil
+    (nth s (.floor js/Math (/ (count s) 2)))))
 
 (defn tip-mouse-move [d i]
   (let [e d3.event
@@ -95,7 +125,8 @@
         min-found-t (when-not (empty? symbols-in-x) (apply min (map :time symbols-in-x)))
         max-found-t (when-not (empty? symbols-in-x) (apply max (map :time symbols-in-x)))
         padded-symbols-by-trace (when-not (or (nil? min-found-t) (nil? max-found-t)) (pad-times symbols-by-trace min-found-t max-found-t))
-        traces-by-time (d3.transpose (vectorize padded-symbols-by-trace))]
+        sorted-traces (sort-by #(first (:position (median-element %))) padded-symbols-by-trace)
+        traces-by-time (d3.transpose (vectorize sorted-traces))]
     (if-not (empty? symbols-in-x)
       (do
         (.. info

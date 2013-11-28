@@ -14,3 +14,5 @@ pom.xml
 .nrepl-port
 /resources/public/js/
 srv/.lein-repl-history
+
+.lein-repl-history
