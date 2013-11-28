@@ -22,3 +22,21 @@ h1 {
   top: 0em;
 }
 .left { fill:red; }
+
+#info {
+  position: absolute;
+  text-align: center;
+  padding: 2px;
+  font: 12px sans-serif;
+  background: lightsteelblue;
+  border: 0px;
+  border-radius: 8px;
+  pointer-events: none;
+}
+
+#info ol {
+  display:inline-block;
+  list-style-type:none;
+  width:128px;
+  padding-left:0px;
+}

@@ -8,22 +8,30 @@
   (last stuff))
 (set! *print-fn* log)
 
-(def width 800)
-(def height 800)
+(def width 400)
+(def height 400)
+
+(when-not info
+  (def info (.. d3
+                (select "body")
+                (append "div")
+                (attr "id" "info")
+                (style "opacity" 0))))
 
 (defn make-slider! [id mn v mx st f]
   (when (= 0 (.size (.select d3 (str "#" id))))
-    (do (.. d3
-            (select "body")
-            (append "div")
-            (attr {:class "slider" :id id})
-            (call (.. (d3.slider)
-                      (axis true)
-                      (min mn)
-                      (value v)
-                      (max mx)
-                      (step st)
-                      (on "slide" #(f %2)))))
+    (do
+      (.. d3
+          (select "body")
+          (append "div")
+          (attr {:class "slider" :id id})
+          (call (.. (d3.slider)
+                    (axis true)
+                    (min mn)
+                    (value v)
+                    (max mx)
+                    (step st)
+                    (on "slide" #(f %2)))))
       (.. d3
           (select (str "#" id))
           (insert "div" ":first-child")
@@ -38,9 +46,88 @@
 (defn link-distance [l] (.-distance l))
 (def iterations 100)
 
-(when-not svg (.. d3 (select "body") (append "svg")))
+(when-not svg (.. d3 (select "body") (append "svg") (attr "id" "svg")))
 (def svg (.select d3 "body > svg"))
 (.property svg {:width width :height height})
+
+(defn tip-mouse-move [d i]
+  (let [e d3.event
+        svg-element (.getElementById js/document "svg")
+        svg-off-top (.-offsetTop svg-element)
+        svg-off-left (.-offsetLeft svg-element)
+        ex (- (.-pageX e) svg-off-left)
+        ey (- (.-pageY e) svg-off-top 10)
+        traces (.. svg (selectAll ".trace") (data))
+        radius 8.0 ;in pixels
+        min-x (- ex radius)
+        max-x (+ ex radius)
+        min-t (max 0 (.round js/Math (.invert y (+ ey radius))))
+        max-t (.round js/Math (.invert y (- ey radius)))
+        _ (log "min: " min-t " max: " max-t)
+        symbols-in-t (mapcat (fn [t] (mapcat (fn [trace]
+                                               (if (> (count (:inputs trace)) t)
+                                                 [(assoc
+                                                    (nth (:inputs trace) t)
+                                                    :id (:id trace))]
+                                                 []))
+                                             traces))
+                             (reverse (range min-t max-t)))
+        symbols-in-x (filter #(<= min-x (nth (:position %) 0) max-x)
+                             symbols-in-t)
+        symbols-by-trace (vec (map vec (partition-by :id symbols-in-x)))
+        x-count (count symbols-by-trace)
+        max-t-count (when (> x-count 0) (apply max-key count symbols-by-trace))]
+    (if (> x-count 0)
+      (do
+;        (log "data are " (count symbols-by-trace) " = " (.stringify js/JSON (clj->js symbols-by-trace)) " .. " (map count symbols-by-trace))
+        #_(.. info
+            (selectAll "p")
+            (remove))
+        (.. info
+            (selectAll "ol")
+            (remove))
+        #_(.. info
+            (selectAll "p")
+            (data #(vec symbols-by-trace))
+            (append "p")
+            (text (fn [d i] (:id (first d)))))
+        (.. info
+            (selectAll "ol")
+            (data (vec symbols-by-trace))
+            (enter)
+            (append "ol"))
+        (.. info
+            (selectAll "ol")
+            (data (vec symbols-by-trace))
+            (selectAll "li")
+            (data (fn [d i] d))
+            (enter)
+            (append "li"))
+        (.. info
+            (selectAll "ol")
+            (data (vec symbols-by-trace))
+            (selectAll "li")
+            (data (fn [d i] d))
+            (attr "start" (fn [d i] (:time d)))
+            (text (fn [d i j] (str (:time d) ". " (:player d) " " (:det d) ":" (:vals d)))))
+        (.style info "left" (- (.-pageX e) 8))
+        (.style info "top" (- (.-pageY e) (/ (.-clientHeight (.getElementById js/document "info")) 2)))
+        (.. info
+            (transition)
+            (duration 100)
+            (style "opacity" 0.9)))
+      (tip-mouse-out d i))))
+(defn tip-mouse-out [d i]
+  (.. info
+      (selectAll "ol")
+      (remove))
+  (.. info
+      (transition)
+      (duration 100)
+      (style "opacity" 0)))
+(.on svg "mouseover" tip-mouse-move)
+(.on svg "mousemove" tip-mouse-move)
+(.on svg "mouseout" tip-mouse-out)
 
 (def x (.. (d3.scale.linear) (domain [0 1]) (range [10 (- width 10)])))
 (def y (.. (d3.scale.linear) (domain [0 1]) (range [(- height 10) 10])))
