@@ -15,7 +15,7 @@
 ;;;; We use a warp window to keep the comparisons relevant, knowing a priori that
 ;;;; all time series start at the same time.
 
-(def warp-window 10)
+(def warp-window 20)
 (def del-cost 1.0)
 (def ins-cost 1.0)
 
@@ -200,3 +200,12 @@
   (doall (for [a vss
                b vss]
            (diss-t (get vs a) (get vs b) doms))))
+
+(let [log (gamalyzer.read.mario/sample-data)
+      vs (:traces log)
+      doms (:domains log)
+      a (get vs "/Users/jcosborn/Projects/gamalyzer/resources/traces/mario/lazy-cig-sergeykarakovskiy/actions.act")
+      b (get vs "/Users/jcosborn/Projects/gamalyzer/resources/traces/mario/lazy-human4/actions.act")
+      ab (diss-t a b doms)
+      ba (diss-t b a doms)]
+  [ab ba])

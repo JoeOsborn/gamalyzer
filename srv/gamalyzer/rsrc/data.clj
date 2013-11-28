@@ -2,6 +2,7 @@
   (:require [compojure.core :refer :all]
 						[liberator.core :refer [resource defresource]]
             [gamalyzer.read.synth :refer [read-logs]]
+            [gamalyzer.read.mario :refer [sample-data]]
             [gamalyzer.cmp.tt :refer [pivot-distances]]
             [clojure.core.matrix :refer [set-current-implementation mutable
                                          slices to-nested-vectors new-array
@@ -64,23 +65,26 @@
 
 
 (defn test-data [n k dur]
-  (let [logs (read-logs [[:a (/ n 4) [dur (* dur 1.25)] {[1 [:a] [:a]] 1.0}]
-                         [:b (/ n 4) [dur (* dur 1.25)] {[1 [:b] [:a]] 1.0}]
-                         [:c (/ n 4) [dur (* dur 1.25)] {[1 [:a] [:b]] 1.0}]
-                         [:ac (/ n 4) [dur (* dur 1.25)] {[1 [:a] [:a]] 0.4
-                                                          [1 [:a] [:b]] 0.4
-                                                          [1 [:b] [:a]] 0.2}]]
-                        (hash-set :system :random)
-                        nil)
+  (let [logs (sample-data)
+        #_logs #_(read-logs [[:a (/ n 4) [dur (* dur 1.25)] {[1 [:a] [:a]] 1.0}]
+                             [:b (/ n 4) [dur (* dur 1.25)] {[1 [:b] [:a]] 1.0}]
+                             [:c (/ n 4) [dur (* dur 1.25)] {[1 [:a] [:b]] 1.0}]
+                             [:ac (/ n 4) [dur (* dur 1.25)] {[1 [:a] [:a]] 0.4
+                                                              [1 [:a] [:b]] 0.4
+                                                              [1 [:b] [:a]] 0.2}]]
+                            (hash-set :system :random)
+                            nil)
         vs (:traces logs)
         doms (:domains logs)
+        n (min n (count vs))
+        k (min k n)
         [pivot-ids mat] (pivot-distances k vs doms)
         pivots (map #(get vs %) pivot-ids)
         msq (square mat)
         pivot-mat (kxnxd->kxkxd msq pivot-ids (vals vs))
         similars (tally-similars msq pivot-ids vs)
         pivot-diffs-t (map to-nested-vectors (slices pivot-mat 2))]
-    [(map :label pivots)
+    [(map #(or (:label %) (:id %)) pivots)
      (map #(assoc % :similar-count (or (get similars (:id %)) 0)) pivots)
      pivot-diffs-t
      (x-coords (last pivot-diffs-t))]))
