@@ -153,6 +153,7 @@
             (data (fn [d i] d))
             (enter)
             (append "td")
+            (style "background-color" (fn [d] (pick-color (:vals d) 0.8 0.8)))
             (text (fn [d]
                     (if (:dummy d)
                       (str (:time d)". ")
@@ -219,14 +220,14 @@
    (< n 0) (wrap (+ n l) l)
    true n))
 
-(defn pick-color [values]
-  (when-not (get val-colors values)
-    (set! cur-hue (wrap (+ cur-hue 144) 360))
-    (set! val-colors
-          (assoc val-colors
-            values
-            (d3.hsl cur-hue 0.8 0.6))))
-  (.toString (get val-colors values)))
+(defn pick-color
+  ([values] (pick-color values 0.8 0.6))
+  ([values sat] (pick-color values sat 0.6))
+  ([values sat lum]
+   (when-not (get val-colors values)
+     (set! cur-hue (wrap (+ cur-hue 144) 360))
+     (set! val-colors (assoc val-colors values cur-hue)))
+   (.toString (d3.hsl (get val-colors values) sat lum))))
 
 (defn trace-id [t] (get t :id))
 
@@ -341,7 +342,7 @@
     (partition (count init-xs) (map #(.-x %) lnodes-js))))
 
 (defn kick! [root]
-  (.property (.select d3 "svg") {:width width :height height})
+  (.attr (.select d3 "svg") {:width width :height height})
   (set! x (.. (d3.scale.linear) (domain [0 1]) (range [10 (- width 10)])))
   (set! y (.. (d3.scale.linear) (domain [0 1]) (range [(- height 10) 10])))
   (let [pivots (nth root 1)
