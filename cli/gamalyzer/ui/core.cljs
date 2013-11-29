@@ -72,21 +72,22 @@
     (:position inp)
     (double-array 0 0)))
 
-(defn pad-times [symbols-by-trace min-t max-t]
-  (map (fn [inputs]
-         (let [id (:id (first inputs))]
+(defn pad-times [traces min-t max-t]
+  (map (fn [trace]
+         (let [inputs (:inputs trace)
+               id (:id trace)]
            (reverse
             (sort-by :time
-                     (map-indexed
-                      (fn [i t]
+                     (map
+                      (fn [t]
                         (if-let [inp (get-by #(== (:time %) t) inputs)]
-                          inp
+                          (assoc inp :id id)
                           {:time t
                            :dummy true
                            :id id
-                           :position (get-nearest-position inputs i)}))
+                           :position (get-nearest-position inputs t)}))
                       (range min-t (inc max-t)))))))
-       symbols-by-trace))
+       traces))
 
 (defn vectorize [s]
   (if (sequential? s)
@@ -121,10 +122,11 @@
                              (reverse (range min-t max-t)))
         symbols-in-x (filter #(<= min-x (nth (:position %) 0) max-x)
                              symbols-in-t)
-        symbols-by-trace (vec (vals (group-by #(:id %) symbols-in-x)))
+        ids-in-x (into (hash-set) (map :id symbols-in-x))
+        traces-in-x (filter #(contains? ids-in-x (:id %)) traces)
         min-found-t (when-not (empty? symbols-in-x) (apply min (map :time symbols-in-x)))
         max-found-t (when-not (empty? symbols-in-x) (apply max (map :time symbols-in-x)))
-        padded-symbols-by-trace (when-not (or (nil? min-found-t) (nil? max-found-t)) (pad-times symbols-by-trace min-found-t max-found-t))
+        padded-symbols-by-trace (when-not (empty? symbols-in-x) (pad-times traces-in-x min-found-t max-found-t))
         sorted-traces (sort-by #(first (:position (median-element %))) padded-symbols-by-trace)
         traces-by-time (d3.transpose (vectorize sorted-traces))]
     (if-not (empty? symbols-in-x)
@@ -132,6 +134,10 @@
         (.. info
             (select "table")
             (selectAll "tr")
+            (remove))
+        (.. info
+            (select "table")
+            (selectAll "tfoot")
             (remove))
         (.. info
             (select "table")
@@ -151,6 +157,15 @@
                     (if (:dummy d)
                       (str (:time d)". ")
                       (str (:time d) ". " (:player d) " " (:det d) " " (:vals d))))))
+        (.. info
+            (select "table")
+            (append "tfoot")
+            (append "tr")
+            (selectAll "td")
+            (data (map first sorted-traces))
+            (enter)
+            (append "td")
+            (text (fn [d] (str (:id d)))))
         (.style info "left" (- (.-pageX e) 8))
         (.style info "top" (- (.-pageY e) (/ (.-clientHeight (.getElementById js/document "info")) 2)))
         (.. info
@@ -162,6 +177,10 @@
 ;  (.. info
 ;      (selectAll "tr")
 ;      (remove))
+;        (.. info
+;            (select "table")
+;            (selectAll "tfoot")
+;            (remove))
 ;  (.. info
 ;      (transition)
 ;      (duration 100)

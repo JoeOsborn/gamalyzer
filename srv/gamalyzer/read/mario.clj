@@ -1,5 +1,5 @@
 (ns gamalyzer.read.mario
-  (:require [clojure.java.io :refer [input-stream]]
+  (:require [clojure.java.io :refer [input-stream file]]
             [gamalyzer.data.input :refer [make-input make-domains expand-domain player]]))
 
 (defn byte->bits [i]
@@ -24,7 +24,8 @@
       (loop [inputs (transient []) doms doms]
         (let [bytes-read (.read f ba)]
           (cond
-           (== bytes-read -1) [{:id path :inputs (persistent! inputs)} doms]
+           (== bytes-read -1) [{:id (.getName (.getParentFile (file path)))
+                                :inputs (persistent! inputs)} doms]
            (< bytes-read samples-per-frame)
            (do
              (doseq [i (range bytes-read samples-per-frame)]
