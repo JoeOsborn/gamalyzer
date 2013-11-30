@@ -48,7 +48,7 @@
 (defn link-distance [l] (.-distance l))
 (def iterations 100)
 
-(when-not svg (.. d3 (select "body") (append "svg") (attr "id" "svg")))
+(when-not svg (.. d3 (select "body") (append "svg") (attr "id" "svg") (attr {:width width :height height})))
 (def svg (.select d3 "body > svg"))
 (.property svg {:width width :height height})
 
@@ -342,7 +342,7 @@
     (partition (count init-xs) (map #(.-x %) lnodes-js))))
 
 (defn kick! [root]
-  (.attr (.select d3 "svg") {:width width :height height})
+  (.attr svg {:width width :height height})
   (set! x (.. (d3.scale.linear) (domain [0 1]) (range [10 (- width 10)])))
   (set! y (.. (d3.scale.linear) (domain [0 1]) (range [(- height 10) 10])))
   (let [pivots (nth root 1)
