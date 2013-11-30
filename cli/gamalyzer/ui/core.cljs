@@ -105,6 +105,15 @@
     nil
     (nth s (.floor js/Math (/ (count s) 2)))))
 
+(defn highlight-selected! [mode min-x min-y max-x max-y]
+  (.. d3
+      (selectAll "g .input")
+      (classed mode
+               (fn [d]
+                 (let [[x y] (:position d)]
+                   (and (<= min-x x max-x)
+                        (<= min-y y max-y)))))))
+
 (defn selected-traces [min-x min-t max-x max-t]
   (let [traces (.. svg (selectAll ".trace") (data))
         symbols-in-t
@@ -167,7 +176,7 @@
         (enter)
         (append "td")
         (text (fn [d] (str (:id d)))))
-    (.style info {:left (- ex 8)
+    (.style info {:left (+ ex 8)
                   :top (- ey (/ (.-clientHeight (.getElementById js/document "info")) 2))})
     (.. info
         (transition)
@@ -192,9 +201,13 @@
         min-t (max 0 (.round js/Math (.invert y (+ ey radius))))
         max-t (.round js/Math (.invert y (- ey radius)))]
     (if-let [sorted-traces (selected-traces min-x min-t max-x max-t)]
-      (show-infobox! sorted-traces (.-pageX e) (.-pageY e))
-      (hide-infobox!))))
-(defn tip-mouse-out [d i] (hide-infobox!))
+      (do
+        (highlight-selected! "selected-info" min-x (- ey radius) max-x (+ ey radius))
+        (show-infobox! sorted-traces (.-pageX e) (.-pageY e)))
+      (tip-mouse-out d i))))
+(defn tip-mouse-out [d i]
+  (highlight-selected! "selected-info" -1 -1 -1 -1)
+  (hide-infobox!))
 
 (.on svg "mouseover" tip-mouse-move)
 (.on svg "mousemove" tip-mouse-move)
@@ -347,6 +360,18 @@
     (.stop layout)
     (partition (count init-xs) (map #(.-x %) lnodes-js))))
 
+(when-not brush (def brush (.. svg (append "g") (attr "class" "brush"))))
+
+(defn prepare-brush! []
+  (.call brush
+         (.. (d3.svg.brush)
+             (x (.. (d3.scale.identity) (domain [0 width])))
+             (y (.. (d3.scale.identity) (domain [0 height])))
+             (on "brush"
+                 (fn []
+                   (let [[[min-x min-y] [max-x max-y]] (.extent d3.event.target)]
+                     (highlight-selected! "selected-brush" min-x min-y max-x max-y)))))))
+
 (defn kick! [root]
   (.attr svg {:width width :height height})
   (set! x (.. (d3.scale.linear) (domain [0 1]) (range [10 (- width 10)])))
@@ -359,10 +384,9 @@
     ;init-xs are the x coordinates
     (.. y (domain [0 (count slices)]))
     (.. stroke-width (domain [0 (apply max (map :similar-count pivots))]))
+    (prepare-brush!)
     (let [xs (time (layout-xs init-xs slices))]
-      (time (add-layers! pivots xs))
-      ;(prepare-brush )
-      )))
+      (time (add-layers! pivots xs)))))
 
 (if fetched-data
   (kick! fetched-data)

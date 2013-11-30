@@ -8,6 +8,17 @@ h1 {
   text-align: center;
 }
 
+.brush {
+  fill: darkgray;
+}
+
+.input.selected-brush {
+  stroke: lightblue;
+}
+.input.selected-info {
+  stroke: red;
+}
+
 .d3-slider {
   margin-bottom: 2.5em;
   width: 400px;
