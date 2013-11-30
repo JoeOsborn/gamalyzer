@@ -33,7 +33,7 @@
                     (value v)
                     (max mx)
                     (step st)
-                    (on "slide" #(f %2)))))
+                    (on "slide" (fn [e v] (log "now:" v) (f v))))))
       (.. d3
           (select (str "#" id))
           (insert "div" ":first-child")
@@ -43,10 +43,14 @@
 (make-slider! "width" 400 width 2000 100 (fn [w] (set! width w) (kick! fetched-data)))
 (make-slider! "height" 400 height 2000 100 (fn [h] (set! height h) (kick! fetched-data)))
 
-(def link-threshold 1.0)
-(def link-strength 0.0025) ;(fn [l] (* (- 1 (link-distance l)) 0.01)))
+(def link-threshold 0.8)
+(def link-strength 0.01) ;(fn [l] (* (- 1 (link-distance l)) 0.01)))
 (defn link-distance [l] (.-distance l))
 (def iterations 100)
+
+(make-slider! "link-threshold" 0.1 link-threshold 1.0 0.05 (fn [t] (set! link-threshold t) (kick! fetched-data)))
+(make-slider! "link-strength" 0.0 link-strength 0.4 0.001 (fn [t] (set! link-strength t) (kick! fetched-data)))
+(make-slider! "iterations" 0 iterations 100 20 (fn [i] (set! iterations i) (kick! fetched-data)))
 
 (when-not svg (.. d3 (select "body") (append "svg") (attr "id" "svg") (attr {:width width :height height})))
 (def svg (.select d3 "body > svg"))
@@ -174,18 +178,11 @@
             (duration 100)
             (style "opacity" 0.9)))
       (tip-mouse-out d i))))
-(defn tip-mouse-out [d i] nil)
-;  (.. info
-;      (selectAll "tr")
-;      (remove))
-;        (.. info
-;            (select "table")
-;            (selectAll "tfoot")
-;            (remove))
-;  (.. info
-;      (transition)
-;      (duration 100)
-;      (style "opacity" 0)))
+(defn tip-mouse-out [d i]
+  (.. info
+      (transition)
+      (duration 100)
+      (style "opacity" 0)))
 (.on svg "mouseover" tip-mouse-move)
 (.on svg "mousemove" tip-mouse-move)
 (.on svg "mouseout" tip-mouse-out)
@@ -320,8 +317,7 @@
     ar))
 
 (defn layout-xs [init-xs slices]
-  (let [;_ (log slices)
-        layout (.. (d3.layout.force)
+  (let [layout (.. (d3.layout.force)
                    (size [1 (count slices)])
                    (gravity 0)
                    (charge 0)
