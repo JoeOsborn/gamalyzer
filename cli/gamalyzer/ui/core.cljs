@@ -10,6 +10,8 @@
 
 (def width 400)
 (def height 400)
+(def x (.. (d3.scale.linear) (domain [0 1]) (range [10 (- width 10)])))
+(def y (.. (d3.scale.linear) (domain [0 1]) (range [(- height 10) 10])))
 
 (when-not info
   (do
@@ -103,27 +105,18 @@
     nil
     (nth s (.floor js/Math (/ (count s) 2)))))
 
-(defn tip-mouse-move [d i]
-  (let [e d3.event
-        svg-element (.getElementById js/document "svg")
-        svg-off-top (.-offsetTop svg-element)
-        svg-off-left (.-offsetLeft svg-element)
-        ex (- (.-pageX e) svg-off-left)
-        ey (- (.-pageY e) svg-off-top 10)
-        traces (.. svg (selectAll ".trace") (data))
-        radius 8.0 ;in pixels
-        min-x (- ex radius)
-        max-x (+ ex radius)
-        min-t (max 0 (.round js/Math (.invert y (+ ey radius))))
-        max-t (.round js/Math (.invert y (- ey radius)))
-        symbols-in-t (mapcat (fn [t] (mapcat (fn [trace]
-                                               (if (> (count (:inputs trace)) t)
-                                                 [(assoc
-                                                    (nth (:inputs trace) t)
-                                                    :id (:id trace))]
-                                                 []))
-                                             traces))
-                             (reverse (range min-t max-t)))
+(defn selected-traces [min-x min-t max-x max-t]
+  (let [traces (.. svg (selectAll ".trace") (data))
+        symbols-in-t
+        (mapcat (fn [t]
+                  (mapcat (fn [trace]
+                            (if (> (count (:inputs trace)) t)
+                              [(assoc
+                                 (nth (:inputs trace) t)
+                                 :id (:id trace))]
+                              []))
+                          traces))
+                (reverse (range min-t max-t)))
         symbols-in-x (filter #(<= min-x (nth (:position %) 0) max-x)
                              symbols-in-t)
         ids-in-x (into (hash-set) (map :id symbols-in-x))
@@ -133,62 +126,79 @@
         padded-symbols-by-trace (when-not (empty? symbols-in-x) (pad-times traces-in-x min-found-t max-found-t))
         sorted-traces (sort-by #(first (:position (median-element %))) padded-symbols-by-trace)
         traces-by-time (d3.transpose (vectorize sorted-traces))]
-    (if-not (empty? symbols-in-x)
-      (do
-        (.. info
-            (select "table")
-            (selectAll "tr")
-            (remove))
-        (.. info
-            (select "table")
-            (selectAll "tfoot")
-            (remove))
-        (.. info
-            (select "table")
-            (selectAll "tr")
-            (data (vec traces-by-time))
-            (enter)
-            (append "tr"))
-        (.. info
-            (select "table")
-            (selectAll "tr")
-            (data (fn [] traces-by-time))
-            (selectAll "td")
-            (data (fn [d i] d))
-            (enter)
-            (append "td")
-            (style "background-color" (fn [d] (pick-color (:vals d) 0.8 0.8)))
-            (text (fn [d]
-                    (if (:dummy d)
-                      (str (:time d)". ")
-                      (str (:time d) ". " (:player d) " " (:det d) " " (:vals d))))))
-        (.. info
-            (select "table")
-            (append "tfoot")
-            (append "tr")
-            (selectAll "td")
-            (data (map first sorted-traces))
-            (enter)
-            (append "td")
-            (text (fn [d] (str (:id d)))))
-        (.style info "left" (- (.-pageX e) 8))
-        (.style info "top" (- (.-pageY e) (/ (.-clientHeight (.getElementById js/document "info")) 2)))
-        (.. info
-            (transition)
-            (duration 100)
-            (style "opacity" 0.9)))
-      (tip-mouse-out d i))))
-(defn tip-mouse-out [d i]
+    (when-not (empty? symbols-in-x)
+      sorted-traces)))
+
+(defn show-infobox! [sorted-traces ex ey]
+  (let [traces-by-time (d3.transpose (vectorize sorted-traces))]
+    (.. info
+        (select "table")
+        (selectAll "tr")
+        (remove))
+    (.. info
+        (select "table")
+        (selectAll "tfoot")
+        (remove))
+    (.. info
+        (select "table")
+        (selectAll "tr")
+        (data (vec traces-by-time))
+        (enter)
+        (append "tr"))
+    (.. info
+        (select "table")
+        (selectAll "tr")
+        (data (fn [] traces-by-time))
+        (selectAll "td")
+        (data (fn [d i] d))
+        (enter)
+        (append "td")
+        (style "background-color" (fn [d] (pick-color (:vals d) 0.8 0.8)))
+        (text (fn [d]
+                (if (:dummy d)
+                  (str (:time d)". ")
+                  (str (:time d) ". " (:player d) " " (:det d) " " (:vals d))))))
+    (.. info
+        (select "table")
+        (append "tfoot")
+        (append "tr")
+        (selectAll "td")
+        (data (map first sorted-traces))
+        (enter)
+        (append "td")
+        (text (fn [d] (str (:id d)))))
+    (.style info {:left (- ex 8)
+                  :top (- ey (/ (.-clientHeight (.getElementById js/document "info")) 2))})
+    (.. info
+        (transition)
+        (duration 100)
+        (style "opacity" 0.9))))
+(defn hide-infobox! []
   (.. info
       (transition)
       (duration 100)
       (style "opacity" 0)))
+
+(defn tip-mouse-move [d i]
+  (let [e d3.event
+        svg-element (.getElementById js/document "svg")
+        svg-off-top (.-offsetTop svg-element)
+        svg-off-left (.-offsetLeft svg-element)
+        ex (- (.-pageX e) svg-off-left)
+        ey (- (.-pageY e) svg-off-top 10)
+        radius 8.0 ;in pixels
+        min-x (- ex radius)
+        max-x (+ ex radius)
+        min-t (max 0 (.round js/Math (.invert y (+ ey radius))))
+        max-t (.round js/Math (.invert y (- ey radius)))]
+    (if-let [sorted-traces (selected-traces min-x min-t max-x max-t)]
+      (show-infobox! sorted-traces (.-pageX e) (.-pageY e))
+      (hide-infobox!))))
+(defn tip-mouse-out [d i] (hide-infobox!))
+
 (.on svg "mouseover" tip-mouse-move)
 (.on svg "mousemove" tip-mouse-move)
 (.on svg "mouseout" tip-mouse-out)
-
-(def x (.. (d3.scale.linear) (domain [0 1]) (range [10 (- width 10)])))
-(def y (.. (d3.scale.linear) (domain [0 1]) (range [(- height 10) 10])))
 
 (def all-symbols (vec d3.svg.symbolTypes))
 (defn next-symbol [n]
@@ -350,7 +360,9 @@
     (.. y (domain [0 (count slices)]))
     (.. stroke-width (domain [0 (apply max (map :similar-count pivots))]))
     (let [xs (time (layout-xs init-xs slices))]
-      (time (add-layers! pivots xs)))))
+      (time (add-layers! pivots xs))
+      ;(prepare-brush )
+      )))
 
 (if fetched-data
   (kick! fetched-data)
