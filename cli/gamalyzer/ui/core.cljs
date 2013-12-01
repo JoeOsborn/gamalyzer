@@ -46,17 +46,20 @@
 (make-slider! "height" 400 height 2000 100 (fn [h] (set! height h) (kick! fetched-data)))
 
 (def link-threshold 0.8)
-(def link-strength 0.01) ;(fn [l] (* (- 1 (link-distance l)) 0.01)))
+(def link-strength 0.005) ;(fn [l] (* (- 1 (link-distance l)) 0.01)))
 (defn link-distance [l] (.-distance l))
 (def iterations 100)
 
 (make-slider! "link-threshold" 0.1 link-threshold 1.0 0.05 (fn [t] (set! link-threshold t) (kick! fetched-data)))
-(make-slider! "link-strength" 0.0 link-strength 0.4 0.001 (fn [t] (set! link-strength t) (kick! fetched-data)))
+(make-slider! "link-strength" 0.0 link-strength 0.1 0.0001 (fn [t] (set! link-strength t) (kick! fetched-data)))
 (make-slider! "iterations" 0 iterations 100 20 (fn [i] (set! iterations i) (kick! fetched-data)))
 
-(when-not svg (.. d3 (select "body") (append "svg") (attr "id" "svg") (attr {:width width :height height})))
+(when-not svg (.. d3
+                  (select "body")
+                  (append "svg")
+                  (attr {:id "svg" :width width :height height})))
 (def svg (.select d3 "body > svg"))
-(.property svg {:width width :height height})
+(.attr svg {:width width :height height})
 
 (defn get-by [pred s]
   (first (filter pred s)))
@@ -114,7 +117,7 @@
                    (and (<= min-x x max-x)
                         (<= min-y y max-y)))))))
 
-(defn selected-traces [min-x min-t max-x max-t]
+(defn selected-trace-segments [min-x min-t max-x max-t]
   (let [traces (.. svg (selectAll ".trace") (data))
         symbols-in-t
         (mapcat (fn [t]
@@ -129,17 +132,17 @@
         symbols-in-x (filter #(<= min-x (nth (:position %) 0) max-x)
                              symbols-in-t)
         ids-in-x (into (hash-set) (map :id symbols-in-x))
-        traces-in-x (filter #(contains? ids-in-x (:id %)) traces)
-        min-found-t (when-not (empty? symbols-in-x) (apply min (map :time symbols-in-x)))
-        max-found-t (when-not (empty? symbols-in-x) (apply max (map :time symbols-in-x)))
-        padded-symbols-by-trace (when-not (empty? symbols-in-x) (pad-times traces-in-x min-found-t max-found-t))
-        sorted-traces (sort-by #(first (:position (median-element %))) padded-symbols-by-trace)
-        traces-by-time (d3.transpose (vectorize sorted-traces))]
+        traces-in-x (filter #(contains? ids-in-x (:id %)) traces)]
     (when-not (empty? symbols-in-x)
-      sorted-traces)))
+      (pad-times traces-in-x
+                 (apply min (map :time symbols-in-x))
+                 (apply max (map :time symbols-in-x))))))
 
-(defn show-infobox! [sorted-traces ex ey]
-  (let [traces-by-time (d3.transpose (vectorize sorted-traces))]
+(defn show-infobox! [symbols-by-trace ex ey]
+  (let [sorted-traces (sort-by #(first (:position (median-element %)))
+                               symbols-by-trace)
+        traces-by-time (d3.transpose (vectorize sorted-traces))
+        info-elt (.getElementById js/document "info")]
     (.. info
         (select "table")
         (selectAll "tr")
@@ -162,11 +165,12 @@
         (data (fn [d i] d))
         (enter)
         (append "td")
-        (style "background-color" (fn [d] (pick-color (:vals d) 0.8 0.8)))
+        (style "background-color" (fn [d]
+                                    (pick-color (:vals d) 0.8 0.8)))
         (text (fn [d]
-                (if (:dummy d)
-                  (str (:time d)". ")
-                  (str (:time d) ". " (:player d) " " (:det d) " " (:vals d))))))
+                (apply str (:time d) ". "
+                     (when-not (:dummy d)
+                       [(:player d) " " (:det d) " " (:vals d)])))))
     (.. info
         (select "table")
         (append "tfoot")
@@ -177,7 +181,7 @@
         (append "td")
         (text (fn [d] (str (:id d)))))
     (.style info {:left (+ ex 8)
-                  :top (- ey (/ (.-clientHeight (.getElementById js/document "info")) 2))})
+                  :top (- ey (/ (.-clientHeight info-elt) 2))})
     (.. info
         (transition)
         (duration 100)
@@ -187,6 +191,8 @@
       (transition)
       (duration 100)
       (style "opacity" 0)))
+
+(defn y->t [v] (max 0 (.round js/Math (.invert y v))))
 
 (defn tip-mouse-move [d i]
   (let [e d3.event
@@ -198,12 +204,14 @@
         radius 8.0 ;in pixels
         min-x (- ex radius)
         max-x (+ ex radius)
-        min-t (max 0 (.round js/Math (.invert y (+ ey radius))))
-        max-t (.round js/Math (.invert y (- ey radius)))]
-    (if-let [sorted-traces (selected-traces min-x min-t max-x max-t)]
+        min-t (y->t (+ ey radius))
+        max-t (y->t (- ey radius))]
+    (if-let [traces (selected-trace-segments min-x min-t max-x max-t)]
       (do
-        (highlight-selected! "selected-info" min-x (- ey radius) max-x (+ ey radius))
-        (show-infobox! sorted-traces (.-pageX e) (.-pageY e)))
+        (highlight-selected! "selected-info"
+                             min-x (- ey radius)
+                             max-x (+ ey radius))
+        (show-infobox! traces (.-pageX e) (.-pageY e)))
       (tip-mouse-out d i))))
 (defn tip-mouse-out [d i]
   (highlight-selected! "selected-info" -1 -1 -1 -1)
@@ -285,7 +293,8 @@
               (attr {:stroke-width
                      (fn [d i] (stroke-width (:similar-count d)))
                      :d
-                     (fn [d] (input-line (map :position (:inputs d))))}))
+                     (fn [d] (input-line (map :position
+                                              (:inputs d))))}))
         each-trace (.. trace-layers
                        (selectAll ".input")
                        (data (fn [d i] (:inputs d))))
@@ -362,6 +371,11 @@
 
 (when-not brush (def brush (.. svg (append "g") (attr "class" "brush"))))
 
+(def *custom-vis-fn* nil)
+
+(defn custom-vis []
+  (when *custom-vis-fn* (*custom-vis-fn*)))
+
 (defn prepare-brush! []
   (.call brush
          (.. (d3.svg.brush)
@@ -369,24 +383,34 @@
              (y (.. (d3.scale.identity) (domain [0 height])))
              (on "brush"
                  (fn []
-                   (let [[[min-x min-y] [max-x max-y]] (.extent d3.event.target)]
-                     (highlight-selected! "selected-brush" min-x min-y max-x max-y)))))))
+                   (let [[[min-x min-y] [max-x max-y]]
+                          (.extent d3.event.target)]
+                     (highlight-selected! "selected-brush"
+                                          min-x min-y
+                                          max-x max-y)
+                     (custom-vis)))))))
 
 (defn kick! [root]
   (.attr svg {:width width :height height})
-  (set! x (.. (d3.scale.linear) (domain [0 1]) (range [10 (- width 10)])))
-  (set! y (.. (d3.scale.linear) (domain [0 1]) (range [(- height 10) 10])))
+  (set! x (.. (d3.scale.linear)
+              (domain [0 1])
+              (range [10 (- width 10)])))
+  (set! y (.. (d3.scale.linear)
+              (domain [0 1])
+              (range [(- height 10) 10])))
   (let [pivots (nth root 1)
         ;pivots are the traces (lists of data points)
         slices (vec (nth root 2))
         ;slices are the dissimilarity matrices
         init-xs (nth root 3)]
     ;init-xs are the x coordinates
-    (.. y (domain [0 (count slices)]))
-    (.. stroke-width (domain [0 (apply max (map :similar-count pivots))]))
+    (.domain y [0 (count slices)])
+    (.domain stroke-width
+             [0 (apply max (map :similar-count pivots))])
     (prepare-brush!)
     (let [xs (time (layout-xs init-xs slices))]
-      (time (add-layers! pivots xs)))))
+      (time (add-layers! pivots xs))))
+  (custom-vis))
 
 (if fetched-data
   (kick! fetched-data)
