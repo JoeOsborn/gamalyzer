@@ -13,6 +13,7 @@ pom.xml
 .lein-deps-sum
 .nrepl-port
 /resources/public/js/
+/resources/traces/ortega_shaker/
 srv/.lein-repl-history
 
 .lein-repl-history
