@@ -15,7 +15,7 @@
                  [net.mikera/vectorz-clj "0.17.0"]
                  [net.mikera/core.matrix "0.15.0"]
                  [de.uni-konstanz.inf.algo/mdsj "0.2"]
-                 [org.clojure/clojurescript "0.0-2080"]
+                 [org.clojure/clojurescript "0.0-2030"]
                  [net.drib/strokes "0.5.1"]]
   :repositories {"project" "file:maven_repository"}
   :plugins [[lein-ring "0.8.7"]

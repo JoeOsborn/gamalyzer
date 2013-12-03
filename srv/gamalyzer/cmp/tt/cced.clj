@@ -127,7 +127,11 @@
                  hi (min (dec (count path)) (ceil i))
                  lo-v (nth (nth path lo) 2)
                  hi-v (nth (nth path hi) 2)
-                 weighted-avg (/ (+ (* (- 1 (- hi i)) hi-v) (* (- 1 (- i lo)) lo-v)) 2)]
+                 hi-wt (- 1 (- hi i))
+                 lo-wt (- 1 (- i lo))
+                 weighted-avg (/ (+ (* hi-wt hi-v) (* lo-wt lo-v)) 2)]
+             (when-not (== 2.0 (+ hi-wt lo-wt))
+               (println "uh oh" lo hi lo-wt hi-wt))
              weighted-avg))
          (range 0 length))))
 
@@ -138,18 +142,35 @@
 (defn diss-t [s1 s2 doms]
   (let [t1 (:inputs s1)
         t2 (:inputs s2)
-        len (count t1)
-        vct (new-vector len)]
+        len (+ (count t1) (count t2))]
     (if (= (:id s1) (:id s2))
-      (fill vct 0.0)
+      (new-vector (max (count s1) (count s2)))
       (let [[dist path] (distance t1 t2 doms)
-            fwd-path (resample-path path len)]
-;            fwd-path (map #(get % 2) (filter #(not (= (get % 3) :delete)) path))]
+            len (count path)
+            fwd-path path
+            ;fwd-path (resample-path path len)
+            ;fwd-path (map #(get % 2) (filter #(not (= (get % 3) :delete)) path))
+            vct (new-vector (count fwd-path))]
 ;        (when-not (== (count fwd-path) len) (println "path " fwd-path " is " (count fwd-path) ", not " (inc len)))
         ;(println (:label s1) (:label s2))
         ;(println "P:" path)
         ;(println "F:" fwd-path)
-        (assign vct fwd-path)))))
+        ;(println "VEC:" (assign vct (map #(get % 2) fwd-path)))
+        (assign vct (map #(get % 2) fwd-path))))))
+
+(let [logs (gamalyzer.read.mario/sample-data)
+      vs (:traces logs)
+      doms (:domains logs)
+      maria (get vs "replay_MariaJesus_38")
+      emil (get vs "replay_Emil_38")
+      keith (get vs "replay_Keith_38")
+      bb (ii/diss (second (:inputs maria)) (second (:inputs emil)) doms)]
+  [; (map :vals (:inputs maria))
+   ; (map :vals (:inputs emil))
+   (:vals (second (:inputs maria))) (:vals (second (:inputs emil)))
+   bb
+   (diss-t maria emil doms)
+   (diss-t maria keith doms)])
 
 (defn tst [lim]
   (time (doall
@@ -200,12 +221,3 @@
   (doall (for [a vss
                b vss]
            (diss-t (get vs a) (get vs b) doms))))
-
-(let [log (gamalyzer.read.mario/sample-data)
-      vs (:traces log)
-      doms (:domains log)
-      a (get vs "/Users/jcosborn/Projects/gamalyzer/resources/traces/mario/lazy-cig-sergeykarakovskiy/actions.act")
-      b (get vs "/Users/jcosborn/Projects/gamalyzer/resources/traces/mario/lazy-human4/actions.act")
-      ab (diss-t a b doms)
-      ba (diss-t b a doms)]
-  [ab ba])

@@ -36,13 +36,20 @@
 ; fills a 2d submatrix at [pivot-index,0..|traces|,0..max-length] with the distances
 ; of each trace up to max-length.
 (defn calc-pivot-diffs! [mat pivot-index pivot traces doms]
-  (doseq [:let [max-length (dimension-count mat 2)]
+  (doseq [:let [max-length (dimension-count mat 2)
+                pivot-id (:id pivot)]
           j (range 0 (count traces))
           :let [sample (get traces j)
+                sample-id (:id sample)
                 distances (diss-t pivot sample doms)
                 how-many (dimension-count distances 0)]
           d (range 0 max-length)
-          :let [dist (if (< d how-many) (mget distances d) (last distances))]]
+          :let [dist (cond
+                      (< d how-many) (mget distances d)
+                      (= pivot-id sample-id) 0
+                      true (/ (+ (- d how-many)
+                                 (* (last distances) how-many))
+                              d))]]
     (mset! mat pivot-index j d dist)))
 
 (defn pivot-distances [k traces doms]

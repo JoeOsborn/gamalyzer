@@ -14,9 +14,18 @@ h1 {
 
 .input.selected-brush {
   stroke: lightblue;
+  stroke-width: 1px;
 }
 .input.selected-info {
   stroke: red;
+  stroke-width: 1px;
+}
+
+.trace.selected-brush {
+  stroke-width: 4px;
+}
+.trace.selected-info {
+  stroke-width: 4px;
 }
 
 .d3-slider {

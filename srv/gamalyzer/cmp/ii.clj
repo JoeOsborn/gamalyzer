@@ -28,19 +28,24 @@
 
 (defn- vs-diss-lists ^double [vs1 vs2 path doms]
   (let [l1 (double (count vs1))
-        one (double 1.0)
-        ool1p (double (/ 1.0 (inc l1)))
-        ;l2 (count vs2)
-        ]
-    ;(when-not (= l1 l2) (throw (IllegalArgumentException. "Sequences of unequal length")))
-    (loop [i (int 0) ii (double 0.0) d (double 0.0) vs1r vs1 vs2r vs2]
+        denom (/ (* l1 (inc l1)) 2)
+        one (double 1.0)]
+    (loop [i (int 0)
+           ii (double l1)
+           d (double 0.0)
+           vs1r vs1
+           vs2r vs2]
       (if (empty? vs1r)
         d
         (let [v1 (first vs1r)
               v2 (first vs2r)
-              this-diss (double (* (- l1 ii) ool1p))
+              this-diss (double (/ ii denom))
               new-d (* (vs-diss v1 v2 (conj path i) doms) this-diss)]
-          (recur (inc i) (+ ii one) (+ d new-d) (rest vs1r) (rest vs2r)))))))
+          (recur (inc i)
+                 (- ii one)
+                 (+ d new-d)
+                 (rest vs1r)
+                 (rest vs2r)))))))
 
 (defn- vs-diss-nums ^double [v1 v2 path doms]
   (let [r (get-domain doms path)
@@ -63,7 +68,19 @@
   (let [[d1 vs1] (parts i1)
         [d2 vs2] (parts i2)]
     (if-not (= d1 d2) 1.0
-      (* (vs-diss vs1 vs2 [] (get-domains doms d1)) 0.8))))
+      (* (vs-diss vs1 vs2 [] (get-domains doms d1)) 1.0))))
+
+(let [logs (gamalyzer.read.mario/sample-data)
+      vs (:traces logs)
+      doms (:domains logs)
+      maria (get vs "replay_MariaJesus_38")
+      emil (get vs "replay_Emil_38")]
+  [(:vals (second (:inputs maria)))
+   (:vals (second (:inputs emil)))
+   (vs-diss (:vals (second (:inputs maria))) (:vals (second (:inputs emil)))
+            []
+            (get-domains doms [:move]))])
+
 
 (is (= 0.0 (diss (make-input 1 0 :a [:a]) (make-input 0 0 :a [:a]) (make-domains))))
 (is (= 0.8 (diss (make-input 1 0 :a [:a]) (make-input 0 0 :a [:b]) (make-domains))))
