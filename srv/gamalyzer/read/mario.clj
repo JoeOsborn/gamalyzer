@@ -99,7 +99,7 @@
         {:traces (persistent! ts) :domains doms}))))
 
 (defn sample-data []
-  (let [files (filter #(.endsWith (.getName %) "_0.csv")
+  (let [files (filter #(.endsWith (.getName %) "_2.csv")
                       (file-seq (file "resources/traces/ortega_shaker/")))
         [ts ds] (reduce (fn [[traces doms] file]
                           (let [[trace new-doms]

@@ -44,12 +44,9 @@
                 distances (diss-t pivot sample doms)
                 how-many (dimension-count distances 0)]
           d (range 0 max-length)
-          :let [dist (cond
-                      (< d how-many) (mget distances d)
-                      (= pivot-id sample-id) 0
-                      true (/ (+ (- d how-many)
-                                 (* (last distances) how-many))
-                              d))]]
+          :let [dist (if (< d how-many)
+                       (mget distances d)
+                       (last distances))]]
     (mset! mat pivot-index j d dist)))
 
 (defn pivot-distances [k traces doms]
