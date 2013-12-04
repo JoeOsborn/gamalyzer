@@ -1,5 +1,5 @@
 (ns gamalyzer.read.synth
-  (:require [gamalyzer.data.input :refer [make-input make-domains expand-domain**]])
+  (:require [gamalyzer.data.input :refer [make-input make-trace make-traces make-domains expand-domain**]])
   (:import [java.util UUID]))
 
 (defn- model-synthesize-one [model ks t]
@@ -17,22 +17,21 @@
   (let [ks (vec (keys model))]
     (mapv #(model-synthesize-one model ks %) (range 0 how-many))))
 
-(defn- make-trace [k uuid how-long model]
+(defn- synth-trace [k uuid how-long model]
   (let [traces (model-synthesize model how-long)]
-    {:id uuid :inputs traces :label k}))
+    (assoc (make-trace uuid traces) :label k)))
 
-(defn- make-traces [k how-many how-long model]
-  (reduce (fn [so-far _]
-            (let [uuid (.toString (UUID/randomUUID))
-                  how-long-here (if (sequential? how-long) (let [[lo hi] how-long] (+ lo (* (rand) (- hi lo)))) how-long)]
-              (assoc so-far uuid (make-trace k uuid how-long-here model))))
-          (hash-map)
-          (range 0 how-many)))
+(defn- synth-traces [k how-many how-long model]
+  (map (fn [so-far]
+         (let [uuid (.toString (UUID/randomUUID))
+               how-long-here (if (sequential? how-long) (let [[lo hi] how-long] (+ lo (* (rand) (- hi lo)))) how-long)]
+           (synth-trace k uuid how-long-here model)))
+       (range 0 how-many)))
 
 (defn read-logs [models _blacklist domains]
-  (let [vs (apply merge (map #(apply make-traces %) models))
+  (let [vs (vec (mapcat #(apply synth-traces %) models))
         doms (expand-domain** vs (if (nil? domains) (make-domains) domains))]
-    {:domains doms :traces vs}))
+    (make-traces vs doms)))
 
 (read-logs [[:a 1 2 {[1 [:a] [:a]] 1.0}]
             [:b 1 2 {[1 [:b] [:a]] 1.0}]

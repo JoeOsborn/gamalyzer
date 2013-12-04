@@ -54,13 +54,9 @@
                                      (hash-set :system :random)
                                      nil)
                      vs (:traces logs)
-                     doms (:domains logs)
-                     vss (vec (keys vs))]
+                     doms (:domains logs)]
                  (for [x (range 0 lim)
                        y (range (inc x) lim)
-                       :let [id1 (get vss x), id2 (get vss y)]]
-                   [x y
-                    (double (diss {:id id1, :inputs (get vs id1)}
-                                  {:id id2, :inputs (get vs id2)}
-                                  doms))])))))
+                       :let [t1 (nth vss x), t2 (nth vss y)]]
+                   [x y (double (diss t1 t2 doms))])))))
 (tst 5)

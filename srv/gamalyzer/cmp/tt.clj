@@ -19,28 +19,26 @@
     min-distance))
 
 (defn not-a-pivot? [pivots t]
-  (not (some #{(:id t)} pivots)))
+  (not-any? #(= % t) pivots))
 
 (defn maxmin-index [pivots mat traces]
   (let [rng (range 0 (count traces))
-        non-pivot-indices (filter #(not-a-pivot? pivots (get traces %)) rng)
+        non-pivot-indices (filter #(not-a-pivot? pivots %) rng)
         maxmin (apply max-key #(best-pivot-distance mat pivots %) non-pivot-indices)]
     maxmin))
 
 (defn select-pivot [pivots mat traces]
   (if (empty? pivots)
-    (first traces)
+    0
     ; find the non-pivot trace #n with the largest "best distance" to every pivot up to k
-    (get traces (maxmin-index pivots mat traces))))
+    (maxmin-index pivots mat traces)))
 
 ; fills a 2d submatrix at [pivot-index,0..|traces|,0..max-length] with the distances
 ; of each trace up to max-length.
 (defn calc-pivot-diffs! [mat pivot-index pivot traces doms]
-  (doseq [:let [max-length (dimension-count mat 2)
-                pivot-id (:id pivot)]
+  (doseq [:let [max-length (dimension-count mat 2)]
           j (range 0 (count traces))
-          :let [sample (get traces j)
-                sample-id (:id sample)
+          :let [sample (nth traces j)
                 distances (diss-t pivot sample doms)
                 how-many (dimension-count distances 0)]
           d (range 0 max-length)
@@ -51,14 +49,14 @@
 
 (defn pivot-distances [k traces doms]
   (let [n (count traces)
-        ts (vec (vals traces))
-        max-length (apply max (map #(count (:inputs %)) ts))
+        max-length (apply max (map #(count (:inputs %)) traces))
         mat0 (new-array [k n max-length])]
     (reduce
      (fn [[pivots mat] ki]
-         (let [pivot (select-pivot pivots mat ts)]
-           (calc-pivot-diffs! mat ki pivot ts doms)
-           [(conj pivots (:id pivot)) mat]))
+         (let [pivot-index (select-pivot pivots mat traces)
+               pivot (nth traces pivot-index)]
+           (calc-pivot-diffs! mat ki pivot traces doms)
+           [(conj pivots pivot-index) mat]))
      [[] mat0]
      (range 0 k))))
 
@@ -75,10 +73,10 @@
                vs (:traces logs)
                doms (:domains logs)
                [pivots mat] (pivot-distances k vs doms)]
-           [(map #(get vs %) pivots) mat]))))
+           [(map :id (map #(nth vs %) pivots)) mat]))))
 
 (tst 100 10)
 
-(let [traces (reduce #(assoc %1 (:id %2) %2) {} [{:similar-count 53, :id "d73114ff-a682-4709-ba0a-f0f061e2f74f", :inputs [{:time 0, :player 1, :det [:a], :vals [:a]} {:time 1, :player 1, :det [:a], :vals [:a]} {:time 2, :player 1, :det [:a], :vals [:a]} {:time 3, :player 1, :det [:b], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:a]}], :label :ab} {:similar-count 33, :id "57e06a91-a650-4532-92d7-b19dae4d096e", :inputs [{:time 0, :player 1, :det [:b], :vals [:a]} {:time 1, :player 1, :det [:b], :vals [:a]} {:time 2, :player 1, :det [:b], :vals [:a]} {:time 3, :player 1, :det [:b], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:b]}], :label :bc} {:similar-count 16, :id "189b789c-78a3-4934-a1ac-da2fa5c5ccd8", :inputs [{:time 0, :player 1, :det [:a], :vals [:b]} {:time 1, :player 1, :det [:a], :vals [:b]} {:time 2, :player 1, :det [:a], :vals [:b]} {:time 3, :player 1, :det [:a], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:a]}], :label :ac}])
+(let [traces [{:similar-count 53, :id "d73114ff-a682-4709-ba0a-f0f061e2f74f", :inputs [{:time 0, :player 1, :det [:a], :vals [:a]} {:time 1, :player 1, :det [:a], :vals [:a]} {:time 2, :player 1, :det [:a], :vals [:a]} {:time 3, :player 1, :det [:b], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:a]}], :label :ab} {:similar-count 33, :id "57e06a91-a650-4532-92d7-b19dae4d096e", :inputs [{:time 0, :player 1, :det [:b], :vals [:a]} {:time 1, :player 1, :det [:b], :vals [:a]} {:time 2, :player 1, :det [:b], :vals [:a]} {:time 3, :player 1, :det [:b], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:b]}], :label :bc} {:similar-count 16, :id "189b789c-78a3-4934-a1ac-da2fa5c5ccd8", :inputs [{:time 0, :player 1, :det [:a], :vals [:b]} {:time 1, :player 1, :det [:a], :vals [:b]} {:time 2, :player 1, :det [:a], :vals [:b]} {:time 3, :player 1, :det [:a], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:a]}], :label :ac}]
       [pivots pivot-mat] (pivot-distances 3 traces (gamalyzer.data.input/expand-domain** traces (gamalyzer.data.input/make-domains)))]
   (map clojure.core.matrix/to-nested-vectors (clojure.core.matrix/slices pivot-mat 2)))

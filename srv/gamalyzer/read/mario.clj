@@ -1,7 +1,7 @@
 (ns gamalyzer.read.mario
   (:require [clojure.java.io :refer [input-stream reader file]]
             [clojure.string :refer [split]]
-            [gamalyzer.data.input :refer [make-input make-domains expand-domain player]]))
+            [gamalyzer.data.input :refer [make-traces make-trace make-input make-domains expand-domain player]]))
 
 (defn byte->bits [i]
   (reverse (map #(bit-test i %) (range 0 8))))
@@ -24,8 +24,10 @@
 (defn mario->gamalyzer
   ([id integers] (mario->gamalyzer id integers 24))
   ([id integers samples-per-frame]
-   {:id id
-    :inputs (map-indexed bytes->input (partition samples-per-frame integers))}))
+   (make-trace id
+               (map-indexed bytes->input
+                            (partition samples-per-frame
+                                       integers)))))
 
 (defn read-input-bytes [f ba samples-per-frame t]
   (let [bytes-read (.read f ba)]
@@ -70,7 +72,8 @@
                            (read-input-lines f samples-per-frame (count inputs)))]
             (recur (conj! inputs input)
                    (expand-domain input doms))
-            [{:id id :inputs (persistent! inputs)} doms]))))))
+            (make-traces [(make-trace id (persistent! inputs))]
+                         doms)))))))
 
 (defn find-files [path suffix]
   (filter #(.endsWith (.getName %) suffix)
@@ -84,29 +87,33 @@
         limit (min (count files) (if (= how-many :all)
                                    (count files)
                                    how-many))]
-    (loop [ts (transient (hash-map))
+    (loop [ts (transient (vector))
            i 0
            doms domains]
       (if (< i limit)
-        (if-let [[trace new-doms] (read-log-trace (nth files i)
-                                                  blacklist
-                                                  doms)]
+        (if-let [{[trace] :traces new-doms :domains}
+                 (read-log-trace (nth files i)
+                                 blacklist
+                                 doms)]
           (recur
-           (assoc! ts (:id trace) trace)
+           (conj! ts trace)
            (inc i)
            new-doms)
-          {:traces (persistent! ts) :domains doms})
-        {:traces (persistent! ts) :domains doms}))))
+          (make-traces (persistent! ts) doms))
+        (make-traces (persistent! ts) doms)))))
 
 (defn sample-data []
   (let [files (filter #(.endsWith (.getName %) "_2.csv")
                       (file-seq (file "resources/traces/ortega_shaker/")))
-        [ts ds] (reduce (fn [[traces doms] file]
-                          (let [[trace new-doms]
-                                (read-log-trace file (hash-set) doms)]
-                            [(assoc traces (:id trace) trace) new-doms]))
-                        [{} (make-domains)]
-                        files)]
-    {:traces ts :domains ds}))
+        traces-and-domains
+        (reduce (fn [{traces :traces
+                      doms :domains} file]
+                  (let [{[trace] :traces
+                         new-doms :domains}
+                        (read-log-trace file (hash-set) doms)]
+                    (make-traces (conj traces trace) new-doms)))
+                  (make-traces [] (make-domains))
+                  files)]
+    traces-and-domains))
 
 (time (sample-data))

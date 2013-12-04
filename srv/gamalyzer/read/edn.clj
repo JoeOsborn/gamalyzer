@@ -1,7 +1,7 @@
 (ns gamalyzer.read.edn
   (:require [clojure.edn :as edn]
             [multiset.core :as ms]
-            [gamalyzer.data.input :refer [make-input make-domains expand-domain player]])
+            [gamalyzer.data.input :refer [make-input make-domains make-traces make-trace expand-domain player]])
   (:import (java.io PushbackReader FileReader)))
 
 (defn open-log [path blacklist]
@@ -54,7 +54,7 @@
                doms domains]
           (let [t (read-log-entry h)]
             (cond
-             (= t :log_end) [{:id ss :inputs (persistent! v)} doms]
+             (= t :log_end) [(make-traces [(make-trace ss (persistent! v))] doms)]
              (= (first t) :log_start)
                (do
                  (close-log h)
@@ -80,20 +80,20 @@
 (defn read-logs [path how-many blacklist indoms]
   (let [log (open-log path blacklist)
         domains (if (nil? indoms) (make-domains) indoms)]
-    (loop [ts (transient (hash-map))
+    (loop [ts (transient (vec))
            remaining how-many
            doms domains]
       (if (or (= remaining :all) (> remaining 0))
-        (if-let [[trace new-doms] (read-log-trace log doms)]
+        (if-let [{[trace] :traces, new-doms :domains} (read-log-trace log doms)]
           (recur
-           (assoc! ts (:id trace) trace)
+           (conj! ts trace)
            (if (number? remaining) (- remaining 1) remaining)
            new-doms)
           (do
             (close-log log)
-            {:traces (persistent! ts) :domains doms}))
+            (make-traces (persistent! ts) doms)))
         (do
           (close-log log)
-          {:traces (persistent! ts) :domains doms})))))
+          (make-traces (persistent! ts) doms))))))
 
 (:traces (time (read-logs "/Users/jcosborn/Projects/game/xsb/logs/log.i.trace" 1 (hash-set :system :random) nil)))

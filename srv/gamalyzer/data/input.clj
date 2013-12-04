@@ -2,14 +2,16 @@
   (:require [multiset.core :refer [multiset? multiset]]
             [gamalyzer.data.range :refer [range? make-range expand-range]]))
 
-(defn make-input [ts pl det inp] {:time ts :player pl :det det :vals inp})
-(defn input? [i]
-  (and (associative? i)
-       (contains? i :time)
-       (contains? i :player)
-       (contains? i :det)
-       (contains? i :vals)))
-(defn make-domains [] {})
+(defrecord Input [time player det vals])
+(defrecord Domains [])
+(defrecord Trace [id inputs])
+(defrecord Traces [traces domains])
+
+(defn make-input [ts pl det inp] (Input. ts pl det inp))
+(defn input? [i] (instance? Input i))
+(defn make-domains [] (Domains.))
+(defn make-trace [id inputs] (Trace. id inputs))
+(defn make-traces [traces domains] (Traces. traces domains))
 
 (defn t [i] (:time i))
 (defn player [i] (:player i))
@@ -60,7 +62,7 @@
   (reduce #(expand-domain %2 %1) doms inputs))
 
 (defn expand-domain** [traces doms]
-  (reduce #(expand-domain* (:inputs %2) %1) doms (vec (vals traces))))
+  (reduce #(expand-domain* (:inputs %2) %1) doms (vec traces)))
 
 ;(expand-domain (make-input 0 0 :a '(1)) (make-domains))
 ;(expand-domain (make-input 0 0 :a '((1))) (make-domains))

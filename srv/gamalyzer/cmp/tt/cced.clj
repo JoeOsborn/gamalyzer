@@ -161,9 +161,9 @@
 (let [logs (gamalyzer.read.mario/sample-data)
       vs (:traces logs)
       doms (:domains logs)
-      maria (get vs "replay_MariaJesus_38")
-      emil (get vs "replay_Emil_38")
-      keith (get vs "replay_Keith_38")
+      maria (first (filter #(= (:id %) "replay_MariaJesus_2") vs))
+      emil (first (filter #(= (:id %) "replay_Emil_2") vs))
+      keith (first (filter #(= (:id %) "replay_Keith_2") vs))
       bb (ii/diss (second (:inputs maria)) (second (:inputs emil)) doms)]
   [; (map :vals (:inputs maria))
    ; (map :vals (:inputs emil))
@@ -181,15 +181,11 @@
                                (hash-set :system :random)
                                nil)
                vs (:traces logs)
-               doms (:domains logs)
-               vss (vec (keys vs))]
+               doms (:domains logs)]
            (for [x (range 0 lim)
                  y (range (inc x) lim)
-                 :let [id1 (get vss x), id2 (get vss y)]]
-             [x y
-              (double (diss (get vs id1)
-                            (get vs id2)
-                            doms))])))))
+                 :let [t1 (nth vs x), t2 (nth vs y)]]
+             [x y (double (diss t1 t2 doms))])))))
 
 (tst 18)
 
@@ -203,21 +199,17 @@
                                (hash-set :system :random)
                                nil)
                vs (:traces logs)
-               doms (:domains logs)
-               vss (vec (keys vs))]
+               doms (:domains logs)]
            (for [x (range 0 lim)
                  y (range (inc x) lim)
-                 :let [id1 (get vss x), id2 (get vss y)]]
-             [x y
-              (diss-t (get vs id1)
-                      (get vs id2)
-                      doms)])))))
+                 :let [t1 (nth vs x), t2 (nth vs y)]]
+             [x y (diss-t t1 t2 doms)])))))
 
 (tst-t 8)
 
-(let [vs (reduce #(assoc %1 (:id %2) %2) {} [{:label :bc, :id "7bb331c9-0347-4704-8265-ec9d3264e750", :inputs [{:vals [:a], :det [:b], :player 1, :time 0} {:vals [:a], :det [:b], :player 1, :time 1} {:vals [:a], :det [:b], :player 1, :time 2} {:vals [:b], :det [:a], :player 1, :time 3} {:vals [:a], :det [:b], :player 1, :time 4} {:vals [:a], :det [:b], :player 1, :time 5} {:vals [:a], :det [:b], :player 1, :time 6} {:vals [:a], :det [:b], :player 1, :time 7} {:vals [:a], :det [:b], :player 1, :time 8} {:vals [:a], :det [:b], :player 1, :time 9}], :similar-count 34} {:label :ab, :id "5cc80077-4c4c-4c27-ab62-1410180f53ee", :inputs [{:vals [:a], :det [:b], :player 1, :time 0} {:vals [:a], :det [:a], :player 1, :time 1} {:vals [:a], :det [:a], :player 1, :time 2} {:vals [:a], :det [:a], :player 1, :time 3} {:vals [:a], :det [:a], :player 1, :time 4} {:vals [:a], :det [:a], :player 1, :time 5} {:vals [:a], :det [:b], :player 1, :time 6} {:vals [:a], :det [:a], :player 1, :time 7} {:vals [:a], :det [:b], :player 1, :time 8} {:vals [:a], :det [:a], :player 1, :time 9}], :similar-count 37}])
+(let [vs [{:label :bc, :id "7bb331c9-0347-4704-8265-ec9d3264e750", :inputs [{:vals [:a], :det [:b], :player 1, :time 0} {:vals [:a], :det [:b], :player 1, :time 1} {:vals [:a], :det [:b], :player 1, :time 2} {:vals [:b], :det [:a], :player 1, :time 3} {:vals [:a], :det [:b], :player 1, :time 4} {:vals [:a], :det [:b], :player 1, :time 5} {:vals [:a], :det [:b], :player 1, :time 6} {:vals [:a], :det [:b], :player 1, :time 7} {:vals [:a], :det [:b], :player 1, :time 8} {:vals [:a], :det [:b], :player 1, :time 9}], :similar-count 34} {:label :ab, :id "5cc80077-4c4c-4c27-ab62-1410180f53ee", :inputs [{:vals [:a], :det [:b], :player 1, :time 0} {:vals [:a], :det [:a], :player 1, :time 1} {:vals [:a], :det [:a], :player 1, :time 2} {:vals [:a], :det [:a], :player 1, :time 3} {:vals [:a], :det [:a], :player 1, :time 4} {:vals [:a], :det [:a], :player 1, :time 5} {:vals [:a], :det [:b], :player 1, :time 6} {:vals [:a], :det [:a], :player 1, :time 7} {:vals [:a], :det [:b], :player 1, :time 8} {:vals [:a], :det [:a], :player 1, :time 9}], :similar-count 37}]
       doms (gamalyzer.data.input/expand-domain** vs (gamalyzer.data.input/make-domains))
-      vss (vec (keys vs))]
-  (doall (for [a vss
-               b vss]
-           (diss-t (get vs a) (get vs b) doms))))
+      vss (map :id vs)]
+  (doall (for [a vs
+               b vs]
+           (diss-t a b doms))))
