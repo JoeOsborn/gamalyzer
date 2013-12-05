@@ -1,7 +1,7 @@
 (ns gamalyzer.rsrc.data
   (:require [compojure.core :refer :all]
 						[liberator.core :refer [resource defresource]]
-            [gamalyzer.read.synth :refer [read-logs]]
+            [gamalyzer.read.edn :refer [read-logs]]
             [gamalyzer.read.mario :refer [sample-data]]
             [gamalyzer.cmp.tt :refer [pivot-distances]]
             [clojure.core.matrix :refer [set-current-implementation mutable
@@ -63,12 +63,16 @@
 (defn x-coords [kxk]
   (normalize-and-align (vec (first (MDSJ/stressMinimization (into-array (map double-array kxk)) 1)))))
 
+(defn game-data [game lev]
+  (cond
+   (= game :mario) (sample-data lev)
+   (= game :refraction) (read-logs (str "resources/traces/refraction/refraction." lev ".i.trace"))))
 
-(defn test-data [n k dur]
-  (let [logs (sample-data)
+(defn test-data [game lev k]
+  (let [logs (game-data game lev)
         vs (:traces logs)
         doms (:domains logs)
-        n (min n (count vs))
+        n (count vs)
         k (min k n)
         [pivot-indices mat] (pivot-distances k vs doms)
         pivots (map #(nth vs %) pivot-indices)
@@ -84,12 +88,26 @@
      pivot-diffs-t
      (x-coords (last pivot-diffs-t))]))
 
-(test-data 100 2 30)
+(defn mappify [t]
+  (cond
+   (map? t) (into (hash-map) (map (fn [[k v]]
+                                    [(mappify k) (mappify v)]) t))
+   (coll? t) (map mappify t)
+   true t))
 
-(defresource data []
+(mappify (test-data :mario 0 10))
+
+(defresource data [game]
 	:available-media-types ["application/edn"]
 	:handle-ok
-		(fn [ctx] (test-data 100 10 30)))
+		(fn [ctx]
+      (let [req (:query-params (:request ctx))
+            lev (or (and (get req "level") (read-string (get req "level")))
+                    (game {:mario 0 :refraction 5}))
+            k (or (and (get req "k") (read-string (get req "k")))
+                       10)]
+        (mappify (test-data game lev k)))))
 
 (defroutes data-routes
-  (ANY "/data" [] (data)))
+  (ANY "/refraction" [] (data :refraction))
+  (ANY "/mario" [] (data :mario)))

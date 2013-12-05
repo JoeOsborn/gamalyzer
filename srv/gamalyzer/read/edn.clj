@@ -54,7 +54,7 @@
                doms domains]
           (let [t (read-log-entry h)]
             (cond
-             (= t :log_end) [(make-traces [(make-trace ss (persistent! v))] doms)]
+             (= t :log_end) (make-traces [(make-trace ss (persistent! v))] doms)
              (= (first t) :log_start)
                (do
                  (close-log h)
@@ -77,23 +77,30 @@
           (throw (Exception. "Log does not begin with :log_start term")))))
     nil))
 
-(defn read-logs [path how-many blacklist indoms]
-  (let [log (open-log path blacklist)
-        domains (if (nil? indoms) (make-domains) indoms)]
-    (loop [ts (transient (vec))
-           remaining how-many
-           doms domains]
-      (if (or (= remaining :all) (> remaining 0))
-        (if-let [{[trace] :traces, new-doms :domains} (read-log-trace log doms)]
-          (recur
-           (conj! ts trace)
-           (if (number? remaining) (- remaining 1) remaining)
-           new-doms)
-          (do
-            (close-log log)
-            (make-traces (persistent! ts) doms)))
-        (do
-          (close-log log)
-          (make-traces (persistent! ts) doms))))))
+(defn read-logs
+  ([path]
+   (read-logs path :all))
+  ([path how-many]
+   (read-logs path how-many (hash-set)))
+  ([path how-many blacklist]
+   (read-logs path how-many blacklist nil))
+  ([path how-many blacklist indoms]
+   (let [log (open-log path blacklist)
+         domains (if (nil? indoms) (make-domains) indoms)]
+     (loop [ts (transient (vector))
+            remaining how-many
+            doms domains]
+       (if (or (= remaining :all) (> remaining 0))
+         (if-let [{[trace] :traces, new-doms :domains} (read-log-trace log doms)]
+           (recur
+            (conj! ts trace)
+            (if (number? remaining) (- remaining 1) remaining)
+            new-doms)
+           (do
+             (close-log log)
+             (make-traces (persistent! ts) doms)))
+         (do
+           (close-log log)
+           (make-traces (persistent! ts) doms)))))))
 
-(:traces (time (read-logs "/Users/jcosborn/Projects/game/xsb/logs/log.i.trace" 1 (hash-set :system :random) nil)))
+(:traces (time (read-logs "/Users/jcosborn/Projects/gamalyzer/resources/traces/refraction/refraction.5.i.trace" 1 (hash-set) nil)))

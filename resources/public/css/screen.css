@@ -4,10 +4,6 @@ body {
   font-size: 13px;
 }
 
-svg {
-  margin-right: 100px;
-}
-
 h1 {
   text-align: center;
 }
@@ -34,8 +30,9 @@ h1 {
 
 .d3-slider {
   margin-bottom: 2.5em;
-  width: 400px;
-  left: 80px;
+  width:400px;
+  margin-left:100px;
+  margin-right:40px;
 }
 .slider-label {
   width: 100px;

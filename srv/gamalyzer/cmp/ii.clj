@@ -68,7 +68,7 @@
   (let [[d1 vs1] (parts i1)
         [d2 vs2] (parts i2)]
     (if-not (= d1 d2) 1.0
-      (* (vs-diss vs1 vs2 [] (get-domains doms d1)) 1.0))))
+      (* (vs-diss vs1 vs2 [] (get-domains doms d1)) 0.8))))
 
 (let [logs (gamalyzer.read.mario/sample-data)
       vs (:traces logs)

@@ -1,7 +1,11 @@
 (ns gamalyzer.read.mario
   (:require [clojure.java.io :refer [input-stream reader file]]
             [clojure.string :refer [split]]
-            [gamalyzer.data.input :refer [make-traces make-trace make-input make-domains expand-domain player]]))
+            [gamalyzer.data.input :refer [make-traces make-trace make-input make-domains expand-domain player expand-domain*]])
+  (:gen-class :name gamalyzer.read.Mario
+              :methods
+              [[^{:static true} readLogs [(Class/forName (into-array (file "/")))] Traces]
+               [^{:static true} readActions [Traces bytes] Traces]]))
 
 (defn byte->bits [i]
   (reverse (map #(bit-test i %) (range 0 8))))
@@ -102,18 +106,46 @@
           (make-traces (persistent! ts) doms))
         (make-traces (persistent! ts) doms)))))
 
-(defn sample-data []
-  (let [files (filter #(.endsWith (.getName %) "_2.csv")
-                      (file-seq (file "resources/traces/ortega_shaker/")))
-        traces-and-domains
-        (reduce (fn [{traces :traces
-                      doms :domains} file]
-                  (let [{[trace] :traces
-                         new-doms :domains}
-                        (read-log-trace file (hash-set) doms)]
-                    (make-traces (conj traces trace) new-doms)))
-                  (make-traces [] (make-domains))
-                  files)]
-    traces-and-domains))
+(defn sample-data
+  ([] (sample-data 0))
+  ([lev]
+   (let [files (filter #(.endsWith (.getName %)
+                                   (str "_" lev ".csv"))
+                       (file-seq (file "resources/traces/ortega_shaker/")))
+         traces-and-domains
+         (reduce (fn [{traces :traces
+                       doms :domains} file]
+                   (let [{[trace] :traces
+                          new-doms :domains}
+                         (read-log-trace file (hash-set) doms)]
+                     (make-traces (conj traces trace) new-doms)))
+                 (make-traces [] (make-domains))
+                 files)]
+     traces-and-domains)))
 
 (time (sample-data))
+
+
+(defn -readLogs [files]
+  (reduce (fn [{traces :traces
+                doms :domains} file]
+            (let [{[trace] :traces
+                   new-doms :domains}
+                  (read-log-trace file (hash-set) doms)]
+              (make-traces (conj traces trace) new-doms)))
+          (make-traces [] (make-domains))
+          files))
+
+(defn -readActions [{doms :domains} actions]
+  ;group actions into chunks of size samples-per-frame
+  ;pad the last chunk with 0s
+  (let [samples-per-frame 24
+        byte-groups (partition samples-per-frame actions)
+        last-group (last byte-groups)
+        padded-byte-groups (reduce (fn [g _] (conj g 0))
+                                   last-group
+                                   (range (count last-group)
+                                          samples-per-frame))
+        inputs (map-indexed bytes->input padded-byte-groups)
+        new-doms expand-domain* inputs doms]
+    (make-traces [(make-trace :synthetic inputs)] new-doms)))

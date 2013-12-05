@@ -3,6 +3,8 @@
 
 (strokes/bootstrap)
 
+(def mode :refraction)
+
 (defn log [& stuff]
   (. js/console (log (apply str stuff)))
   (last stuff))
@@ -41,6 +43,29 @@
           (insert "div" ":first-child")
           (attr "class" "slider-label")
           (text id)))))
+
+(defn reload-data! []
+  (strokes/fetch-edn (str (name mode) "?level=" level "&k=" pivot-count)
+                     (fn [err root]
+                       (log "load" err root)
+                       (.. d3 (selectAll ".trace") (remove))
+                       (set! fetched-data root)
+                       (kick! fetched-data))))
+
+(def level (mode {:mario 0 :refraction 5}))
+(def pivot-count 10)
+(make-slider! "level"
+              (mode {:mario 0 :refraction 3})
+              level
+              (mode {:mario 39 :refraction 5})
+              1
+              (fn [n]
+                (set! level n)
+                (reload-data!)))
+(make-slider! "pivot-count" 0 pivot-count 20 1
+              (fn [n]
+                (set! pivot-count n)
+                (reload-data!)))
 
 (make-slider! "width" 400 width 2000 100 (fn [w] (set! width w) (kick! fetched-data)))
 (make-slider! "height" 400 height 2000 100 (fn [h] (set! height h) (kick! fetched-data)))
@@ -116,24 +141,17 @@
       (selectAll ".trace .input")
       (classed mode #(pred %))))
 
-(defn selected-trace-segments [min-x min-t max-x max-t]
+(defn selected-trace-segments [min-x min-y max-x max-y]
   (let [traces (.. svg (selectAll ".trace") (data))
-        symbols-in-t
-        (mapcat (fn [t]
-                  (mapcat (fn [trace]
-                            (if (> (count (:inputs trace)) t)
-                              [(nth (:inputs trace) t)]
-                              []))
-                          traces))
-                (reverse (range min-t max-t)))
-        symbols-in-x (filter #(<= min-x (nth (:position %) 0) max-x)
-                             symbols-in-t)
-        ids-in-x (into (hash-set) (map :id symbols-in-x))
+        inputs (filter #(and (<= min-x (first (:position %)) max-x)
+                             (<= min-y (- (second (:position %)) 10) max-y))
+                       (mapcat :inputs traces))
+        ids-in-x (into (hash-set) (map :id inputs))
         traces-in-x (filter #(contains? ids-in-x (:id %)) traces)]
-    (when-not (empty? symbols-in-x)
+    (when-not (empty? inputs)
       (pad-times traces-in-x
-                 (apply min (map :time symbols-in-x))
-                 (apply max (map :time symbols-in-x))))))
+                 (apply min (map :time inputs))
+                 (apply max (map :time inputs))))))
 
 (defn show-infobox! [symbols-by-trace ex ey]
   (let [sorted-traces (sort-by #(first (:position (median-element %)))
@@ -212,7 +230,7 @@
         max-y (+ ey radius)
         min-t (y->t max-y)
         max-t (y->t min-y)]
-    (if-let [traces (selected-trace-segments min-x min-t max-x max-t)]
+    (if-let [traces (selected-trace-segments min-x min-y max-x max-y)]
       (do
         (highlight-selected! "selected-info"
                              (input-contained-fn min-x min-y
@@ -298,7 +316,10 @@
                      :color "gray"}))
         _ (.. each-line
               (attr {:stroke-width
-                     (fn [d i] (stroke-width (:similar-count d)))
+                     (fn [d i] (stroke-width
+                                (if (zero? (:similar-count d))
+                                  1
+                                  (:similar-count d))))
                      :d
                      (fn [d] (input-line (map :position
                                               (:inputs d))))}))
@@ -399,6 +420,7 @@
              (on "brush" update-brush-e!))))
 
 (defn kick! [root]
+  (log "kick")
   (.attr svg {:width width :height height})
   (set! x (.. (d3.scale.linear)
               (domain [0 1])
@@ -414,7 +436,7 @@
     ;init-xs are the x coordinates
     (.domain y [0 (count slices)])
     (.domain stroke-width
-             [0 (apply max (map :similar-count pivots))])
+             [0 (apply max 10 (map :similar-count pivots))])
     (prepare-brush!)
     (let [xs (time (layout-xs init-xs slices))]
       (time (add-layers! pivots xs))))
@@ -422,9 +444,4 @@
 
 (if fetched-data
   (kick! fetched-data)
-  (do (strokes/fetch-edn
-   "data"
-   (fn [err root]
-     (log "load")
-     (set! fetched-data root)
-     (kick! fetched-data)))))
+  (reload-data!))
