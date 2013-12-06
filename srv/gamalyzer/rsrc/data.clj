@@ -4,6 +4,7 @@
             [gamalyzer.read.edn :refer [read-logs]]
             [gamalyzer.read.mario :refer [sample-data]]
             [gamalyzer.cmp.tt :refer [pivot-distances]]
+            [gamalyzer.cmp.tt.cced :refer [with-warp-window]]
             [clojure.core.matrix :refer [set-current-implementation mutable
                                          slices to-nested-vectors new-array
                                          mget mset! shape square dimension-count
@@ -105,8 +106,11 @@
             lev (or (and (get req "level") (read-string (get req "level")))
                     (game {:mario 0 :refraction 5}))
             k (or (and (get req "k") (read-string (get req "k")))
-                       10)]
-        (mappify (test-data game lev k)))))
+                  10)
+            window (or (and (get req "window") (read-string (get req "window")))
+                       20)]
+        (with-warp-window window
+          (mappify (test-data game lev k))))))
 
 (defroutes data-routes
   (ANY "/refraction" [] (data :refraction))

@@ -1,6 +1,7 @@
 (ns gamalyzer.read.mario
   (:require [clojure.java.io :refer [input-stream reader file]]
             [clojure.string :refer [split]]
+            [clojure.math.numeric-tower :refer [ceil]]
             [gamalyzer.data.input :refer [make-traces make-trace make-input make-domains expand-domain player expand-domain*]])
   (:gen-class :name gamalyzer.read.Mario
               :methods
@@ -16,24 +17,27 @@
    (+ js (if j 1 0))
    (+ ds (if d 1 0))])
 
-(defn samples->input [t samples]
-  (make-input t :mario [:move] (seq (reduce downsample [0 0 0 0] samples))))
+(defn samples->input [t quantize samples]
+  (make-input t
+              :mario
+              [:move]
+              (seq (map #(int (ceil (/ % quantize)))
+                        (reduce downsample
+                                [0 0 0 0]
+                                samples)))))
 
-(defn bytes->input [t some-bytes]
-  (samples->input t (map #(nthrest (byte->bits) 2) some-bytes)))
+(defn bytes->input [t quantize some-bytes]
+  (samples->input t quantize
+                  (map #(nthrest (byte->bits) 2)
+                       some-bytes)))
 
-(defn csv->input [t some-strings]
-  (samples->input t (map #(map (fn [s] (not (zero? (read-string s)))) (split % #",")) some-strings)))
+(defn csv->input [t quantize some-strings]
+  (samples->input t quantize
+                  (map #(map (fn [s] (not (zero? (read-string s))))
+                             (split % #","))
+                       some-strings)))
 
-(defn mario->gamalyzer
-  ([id integers] (mario->gamalyzer id integers 24))
-  ([id integers samples-per-frame]
-   (make-trace id
-               (map-indexed bytes->input
-                            (partition samples-per-frame
-                                       integers)))))
-
-(defn read-input-bytes [f ba samples-per-frame t]
+(defn read-input-bytes [f ba samples-per-frame quantize t]
   (let [bytes-read (.read f ba)]
     (cond
      (== bytes-read -1) nil
@@ -41,10 +45,10 @@
      (do
        (doseq [i (range bytes-read samples-per-frame)]
          (aset-byte ba i 0))
-       (bytes->input t ba))
-     true (bytes->input t ba))))
+       (bytes->input t quantize ba))
+     true (bytes->input t quantize ba))))
 
-(defn read-input-lines [f samples-per-frame t]
+(defn read-input-lines [f samples-per-frame quantize t]
   (if-let [first-line (.readLine f)]
     (let [lines (concat [first-line]
                         (map (fn [_]
@@ -52,7 +56,7 @@
                                  line
                                  "0,0,0,0,0,0"))
                              (range 1 samples-per-frame)))]
-      (csv->input t lines))
+      (csv->input t quantize lines))
     nil))
 
 (defn read-log-trace [path blacklist doms]
@@ -60,7 +64,8 @@
         fname (.getName fl)
         is-act (.endsWith fname ".act")
         is-csv (.endsWith fname ".csv")
-        samples-per-frame 24]
+        samples-per-frame 24
+        quantize 4]
     (when-not (or is-act is-csv)
       (throw (.InvalidArgumentException
               (str "Path " path " is neither ACT nor CSV."))))
@@ -72,8 +77,8 @@
         (loop [inputs (transient [])
                doms doms]
           (if-let [input (if is-act
-                           (read-input-bytes f ba samples-per-frame (count inputs))
-                           (read-input-lines f samples-per-frame (count inputs)))]
+                           (read-input-bytes f ba samples-per-frame quantize (count inputs))
+                           (read-input-lines f samples-per-frame quantize (count inputs)))]
             (recur (conj! inputs input)
                    (expand-domain input doms))
             (make-traces [(make-trace id (persistent! inputs))]

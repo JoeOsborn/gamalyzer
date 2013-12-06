@@ -15,7 +15,11 @@
 ;;;; We use a warp window to keep the comparisons relevant, knowing a priori that
 ;;;; all time series start at the same time.
 
-(def warp-window 20)
+(def ^:dynamic *warp-window* 5)
+
+(defmacro with-warp-window [w & t]
+  `(binding [*warp-window* ~w] ~@t))
+
 (def del-cost 1.0)
 (def ins-cost 1.0)
 
@@ -89,7 +93,7 @@
         mat (init-matrix (inc m) (inc n))]
     (when (or (== m 0) (== n 0))
       (throw (IllegalArgumentException. (str "A sequence is empty:" s1 ".v." s2))))
-    (sc-for nx m ny n warp-window
+    (sc-for nx m ny n *warp-window*
             [px (dec nx)
              py (dec ny)
              i1 (get s1 px)
@@ -161,9 +165,9 @@
 (let [logs (gamalyzer.read.mario/sample-data)
       vs (:traces logs)
       doms (:domains logs)
-      maria (first (filter #(= (:id %) "replay_MariaJesus_2") vs))
-      emil (first (filter #(= (:id %) "replay_Emil_2") vs))
-      keith (first (filter #(= (:id %) "replay_Keith_2") vs))
+      maria (first (filter #(.startsWith (:id %) "replay_MariaJesus_") vs))
+      emil (first (filter #(.startsWith (:id %) "replay_Emil_") vs))
+      keith (first (filter #(.startsWith (:id %) "replay_Keith_") vs))
       bb (ii/diss (second (:inputs maria)) (second (:inputs emil)) doms)]
   [; (map :vals (:inputs maria))
    ; (map :vals (:inputs emil))

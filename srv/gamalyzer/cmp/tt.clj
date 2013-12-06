@@ -29,7 +29,7 @@
 
 (defn select-pivot [pivots mat traces]
   (if (empty? pivots)
-    0
+    (rand-int (count traces))
     ; find the non-pivot trace #n with the largest "best distance" to every pivot up to k
     (maxmin-index pivots mat traces)))
 

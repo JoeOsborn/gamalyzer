@@ -1,9 +1,10 @@
 (ns gamalyzer.ui.core
-  (:require [strokes :refer [d3]]))
+  (:require [strokes :refer [d3]]
+            [gamalyzer.ui.colors :refer [pick-color]]))
 
 (strokes/bootstrap)
 
-(def mode :refraction)
+(def mode :mario)
 
 (defn log [& stuff]
   (. js/console (log (apply str stuff)))
@@ -45,15 +46,16 @@
           (text id)))))
 
 (defn reload-data! []
-  (strokes/fetch-edn (str (name mode) "?level=" level "&k=" pivot-count)
+  (strokes/fetch-edn (str (name mode) "?level=" level "&k=" pivot-count "&window=" warp-window)
                      (fn [err root]
                        (log "load" err root)
-                       (.. d3 (selectAll ".trace") (remove))
+;                       (.. d3 (selectAll ".trace") (remove))
                        (set! fetched-data root)
                        (kick! fetched-data))))
 
 (def level (mode {:mario 0 :refraction 5}))
 (def pivot-count 10)
+(def warp-window 20)
 (make-slider! "level"
               (mode {:mario 0 :refraction 3})
               level
@@ -66,6 +68,10 @@
               (fn [n]
                 (set! pivot-count n)
                 (reload-data!)))
+(make-slider! "warp-window" 0 warp-window 100 1
+              (fn [w]
+                (set! warp-window w)
+                (reload-data!)))
 
 (make-slider! "width" 400 width 2000 100 (fn [w] (set! width w) (kick! fetched-data)))
 (make-slider! "height" 400 height 2000 100 (fn [h] (set! height h) (kick! fetched-data)))
@@ -76,7 +82,7 @@
 (def iterations 100)
 
 (make-slider! "link-threshold" 0.1 link-threshold 1.0 0.05 (fn [t] (set! link-threshold t) (kick! fetched-data)))
-(make-slider! "link-strength" 0.0 link-strength 0.4 0.0001 (fn [t] (set! link-strength t) (kick! fetched-data)))
+(make-slider! "link-strength" 0.0 link-strength 0.005 0.0001 (fn [t] (set! link-strength t) (kick! fetched-data)))
 (make-slider! "iterations" 0 iterations 100 20 (fn [i] (set! iterations i) (kick! fetched-data)))
 
 (when-not svg (.. d3
@@ -180,8 +186,8 @@
         (data (fn [d i] d))
         (enter)
         (append "td")
-        (style "background-color" (fn [d]
-                                    (pick-color (:vals d) 0.8 0.8)))
+        (style "background-color"
+               (fn [d] (pick-color (:vals d) 0.8)))
         (text (fn [d]
                 (apply str (:time d) ". "
                      (when-not (:dummy d)
@@ -264,23 +270,6 @@
 
 (def stroke-width (.. (d3.scale.linear) (domain [0 1]) (range [0 5])))
 
-(when-not val-colors (def val-colors {}))
-(when-not cur-hue (def cur-hue 60))
-(defn wrap [n l]
-  (cond
-   (> n l) (wrap (- n l) l)
-   (< n 0) (wrap (+ n l) l)
-   true n))
-
-(defn pick-color
-  ([values] (pick-color values 0.8 0.6))
-  ([values sat] (pick-color values sat 0.6))
-  ([values sat lum]
-   (when-not (get val-colors values)
-     (set! cur-hue (wrap (+ cur-hue 110) 360))
-     (set! val-colors (assoc val-colors values cur-hue)))
-   (.toString (d3.hsl (get val-colors values) sat lum))))
-
 (defn trace-id [t] (get t :id))
 
 (defn add-layers! [traces xs-per-layer]
@@ -300,6 +289,9 @@
         trace-layers (.. svg
                          (selectAll ".trace")
                          (data (vec traces-with-positions) trace-id))
+        _ (.. trace-layers
+              (exit)
+              (remove))
         _ (.. trace-layers
               (enter)
               (append "svg:g")
