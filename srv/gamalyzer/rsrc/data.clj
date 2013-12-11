@@ -64,19 +64,50 @@
 (defn x-coords [kxk]
   (normalize-and-align (vec (first (MDSJ/stressMinimization (into-array (map double-array kxk)) 1)))))
 
+(defn noisify [pct kvs]
+  ;reduce each v by pct/count vs
+  ;insert noise: 0.5 pct chance of X, 0.5 pct chance of Y
+  (let [num-entries (count kvs)
+        new-norm (+ 1.0 pct)]
+    (assoc (into (hash-map)
+                 (map (fn [[k v]]
+                        [k (/ v new-norm)])
+                      kvs))
+      [1 [:a] [:a :a]] (/ (+ (or (get kvs [1 [:a] [:a :a]]) 0) (/ pct 3)) new-norm)
+      [1 [:a] [:b :a]] (/ (+ (or (get kvs [1 [:a] [:b :a]]) 0) (/ pct 3)) new-norm)
+      [1 [:a] [:b :b]] (/ (+ (or (get kvs [1 [:a] [:b :b]]) 0) (/ pct 3)) new-norm))))
+
+(defn synthetic-models [noise]
+  (let [how-many 20
+        how-long-mean 30
+        how-long [(* how-long-mean 0.9) (* how-long-mean 1.1)]]
+    [[:a how-many how-long (noisify noise {[1 [:a] [:a :a]] 0.70
+                                           [1 [:a] [:a :b]] 0.15
+                                           [1 [:a] [:b :b]] 0.15})]
+     [:b how-many how-long (noisify noise {[1 [:a] [:a :a]] 0.15
+                                           [1 [:a] [:a :b]] 0.70
+                                           [1 [:a] [:b :b]] 0.15})]
+     [:c how-many how-long (noisify noise {[1 [:a] [:a :a]] 0.15
+                                           [1 [:a] [:a :b]] 0.15
+                                           [1 [:a] [:b :b]] 0.70})]]))
+
+
 (defn game-data [game lev]
   (cond
    (= game :mario) (sample-data lev)
-   (= game :refraction) (read-logs (str "resources/traces/refraction/refraction." lev ".i.trace"))))
+   (= game :refraction) (read-logs (str "resources/traces/refraction/refraction." lev ".i.trace"))
+   (= game :synthetic) (gamalyzer.read.synth/read-logs (synthetic-models (* lev 0.1)) (hash-set) nil)))
 
-(defn test-data [game lev k]
-  (let [logs (game-data game lev)
-        vs (:traces logs)
-        doms (:domains logs)
-        n (count vs)
+(defn find-pivots [k vs doms]
+  (let [n (count vs)
         k (min k n)
-        [pivot-indices mat] (pivot-distances k vs doms)
-        pivots (map #(nth vs %) pivot-indices)
+        [pivot-indices mat] (pivot-distances k vs doms)]
+    [(map #(nth vs %) pivot-indices) mat]))
+
+(defn process-data [logs k]
+  (let [vs (:traces logs)
+        doms (:domains logs)
+        [pivots mat] (find-pivots k vs doms)
         pivot-ids (map :id pivots)
         msq (square mat)
         pivot-mat (kxnxd->kxkxd msq pivot-ids vs)
@@ -89,6 +120,10 @@
      pivot-diffs-t
      (x-coords (last pivot-diffs-t))]))
 
+(defn test-data [game lev k]
+  (let [logs (game-data game lev)]
+    (process-data logs k)))
+
 (defn mappify [t]
   (cond
    (map? t) (into (hash-map) (map (fn [[k v]]
@@ -96,15 +131,13 @@
    (coll? t) (map mappify t)
    true t))
 
-(mappify (test-data :mario 0 10))
-
 (defresource data [game]
 	:available-media-types ["application/edn"]
 	:handle-ok
 		(fn [ctx]
       (let [req (:query-params (:request ctx))
             lev (or (and (get req "level") (read-string (get req "level")))
-                    (game {:mario 0 :refraction 5}))
+                    (game {:mario 0 :refraction 5 :synthetic 0}))
             k (or (and (get req "k") (read-string (get req "k")))
                   10)
             window (or (and (get req "window") (read-string (get req "window")))
@@ -114,4 +147,5 @@
 
 (defroutes data-routes
   (ANY "/refraction" [] (data :refraction))
-  (ANY "/mario" [] (data :mario)))
+  (ANY "/mario" [] (data :mario))
+  (ANY "/synthetic" [] (data :synthetic)))

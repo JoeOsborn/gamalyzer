@@ -19,7 +19,8 @@
 
 (defn- synth-trace [k uuid how-long model]
   (let [traces (model-synthesize model how-long)]
-    (assoc (make-trace uuid traces) :label k)))
+    (assoc (make-trace (str k "_" uuid) traces)
+      :label k)))
 
 (defn- synth-traces [k how-many how-long model]
   (map (fn [so-far]

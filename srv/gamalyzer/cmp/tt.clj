@@ -60,11 +60,9 @@
      [[] mat0]
      (range 0 k))))
 
-;in-progress: refactor/simplify/fix this module, then use mdsj on the pivots, then use it as static data for some clojurescript/d3 thing. NB: similarity scores on leads in the final vis must be "up to this point" -- i.e. the first K steps of the best path. and latch that score for shorter vs longer paths? it's hard to know what to do for sure.
-
 (defn tst [n k]
   (time (doall
-         (let [dur 25
+         (let [dur 43
                logs (read-logs [[:a (/ n 3) dur {[1 [:a] [:a]] 1.0}]
                                 [:b (/ n 3) dur {[1 [:b] [:a]] 1.0}]
                                 [:c (/ n 3) dur {[1 [:a] [:b]] 1.0}]]
@@ -75,7 +73,7 @@
                [pivots mat] (pivot-distances k vs doms)]
            [(map :id (map #(nth vs %) pivots)) mat]))))
 
-(tst 100 10)
+(tst 10 10)
 
 (let [traces [{:similar-count 53, :id "d73114ff-a682-4709-ba0a-f0f061e2f74f", :inputs [{:time 0, :player 1, :det [:a], :vals [:a]} {:time 1, :player 1, :det [:a], :vals [:a]} {:time 2, :player 1, :det [:a], :vals [:a]} {:time 3, :player 1, :det [:b], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:a]}], :label :ab} {:similar-count 33, :id "57e06a91-a650-4532-92d7-b19dae4d096e", :inputs [{:time 0, :player 1, :det [:b], :vals [:a]} {:time 1, :player 1, :det [:b], :vals [:a]} {:time 2, :player 1, :det [:b], :vals [:a]} {:time 3, :player 1, :det [:b], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:b]}], :label :bc} {:similar-count 16, :id "189b789c-78a3-4934-a1ac-da2fa5c5ccd8", :inputs [{:time 0, :player 1, :det [:a], :vals [:b]} {:time 1, :player 1, :det [:a], :vals [:b]} {:time 2, :player 1, :det [:a], :vals [:b]} {:time 3, :player 1, :det [:a], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:a]}], :label :ac}]
       [pivots pivot-mat] (pivot-distances 3 traces (gamalyzer.data.input/expand-domain** traces (gamalyzer.data.input/make-domains)))]

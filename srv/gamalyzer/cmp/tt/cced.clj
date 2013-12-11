@@ -195,9 +195,9 @@
 
 (defn tst-t [lim]
   (time (doall
-         (let [dur 10
+         (let [dur 40
                logs (read-logs [[:a (/ lim 4) dur {[1 [:a] [:a]] 1.0}]
-                                [:b (/ lim 4) (+ dur 5) {[1 [:b] [:a]] 1.0}]
+                                [:b (/ lim 4) (+ dur 15) {[1 [:b] [:a]] 1.0}]
                                 [:c (/ lim 4) dur {[1 [:a] [:b]] 1.0}]
                                 [:d (/ lim 4) dur {[1 [:a] [:a]] 0.5 [1 [:b] [:a]] 0.5}]]
                                (hash-set :system :random)
@@ -209,7 +209,7 @@
                  :let [t1 (nth vs x), t2 (nth vs y)]]
              [x y (diss-t t1 t2 doms)])))))
 
-(tst-t 8)
+(tst-t 10)
 
 (let [vs [{:label :bc, :id "7bb331c9-0347-4704-8265-ec9d3264e750", :inputs [{:vals [:a], :det [:b], :player 1, :time 0} {:vals [:a], :det [:b], :player 1, :time 1} {:vals [:a], :det [:b], :player 1, :time 2} {:vals [:b], :det [:a], :player 1, :time 3} {:vals [:a], :det [:b], :player 1, :time 4} {:vals [:a], :det [:b], :player 1, :time 5} {:vals [:a], :det [:b], :player 1, :time 6} {:vals [:a], :det [:b], :player 1, :time 7} {:vals [:a], :det [:b], :player 1, :time 8} {:vals [:a], :det [:b], :player 1, :time 9}], :similar-count 34} {:label :ab, :id "5cc80077-4c4c-4c27-ab62-1410180f53ee", :inputs [{:vals [:a], :det [:b], :player 1, :time 0} {:vals [:a], :det [:a], :player 1, :time 1} {:vals [:a], :det [:a], :player 1, :time 2} {:vals [:a], :det [:a], :player 1, :time 3} {:vals [:a], :det [:a], :player 1, :time 4} {:vals [:a], :det [:a], :player 1, :time 5} {:vals [:a], :det [:b], :player 1, :time 6} {:vals [:a], :det [:a], :player 1, :time 7} {:vals [:a], :det [:b], :player 1, :time 8} {:vals [:a], :det [:a], :player 1, :time 9}], :similar-count 37}]
       doms (gamalyzer.data.input/expand-domain** vs (gamalyzer.data.input/make-domains))

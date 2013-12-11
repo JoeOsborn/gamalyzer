@@ -53,13 +53,13 @@
                        (set! fetched-data root)
                        (kick! fetched-data))))
 
-(def level (mode {:mario 0 :refraction 5}))
+(def level (mode {:mario 0 :refraction 5 :synthetic 0}))
 (def pivot-count 10)
 (def warp-window 20)
 (make-slider! "level"
-              (mode {:mario 0 :refraction 3})
+              (mode {:mario 0 :refraction 3 :synthetic 0})
               level
-              (mode {:mario 39 :refraction 5})
+              (mode {:mario 39 :refraction 5 :synthetic 4})
               1
               (fn [n]
                 (set! level n)
@@ -212,7 +212,7 @@
   (.. info
       (transition)
       (duration 100)
-      (style "opacity" 0)))
+      (style "opacity" 0.0)))
 
 (defn y->t [v] (max 0 (.round js/Math (.invert y v))))
 
