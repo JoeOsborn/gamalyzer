@@ -68,5 +68,5 @@
 ;(expand-domain (make-input 0 0 :a '((1))) (make-domains))
 ;(expand-domain (make-input 0 0 :a '((1) :a (2))) (make-domains))
 ;(expand-domain (make-input 1 0 :a '((2) :b (3))) (expand-domain (make-input 0 0 :a '((1) :a (2))) (make-domains)))
-(expand-domain (make-input 1 0 :b '((1) :b (2))) (expand-domain (make-input 0 0 :a '((1) :a (2))) (make-domains)))
-(expand-domain (make-input 1 0 :a [[:p 1] :b [2]]) (expand-domain (make-input 0 0 :a [[:p 1] :a [2]]) (make-domains)))
+#_(expand-domain (make-input 1 0 :b '((1) :b (2))) (expand-domain (make-input 0 0 :a '((1) :a (2))) (make-domains)))
+#_(expand-domain (make-input 1 0 :a [[:p 1] :b [2]]) (expand-domain (make-input 0 0 :a [[:p 1] :a [2]]) (make-domains)))

@@ -20,6 +20,10 @@
                  [clojure-csv/clojure-csv "2.0.1"]
                  [org.clojure/clojurescript "0.0-2030"]
                  [net.drib/strokes "0.5.1"]]
+  :jar-exclusions [#"(?:^|/).svn/"
+	                 #"traces/"
+									 #"maven_repository/"]
+  :aot [gamalyzer.data.input gamalyzer.read.mario gamalyzer.cmp.tt]
   :repositories {"project" "file:maven_repository"}
   :plugins [[lein-ring "0.8.7"]
             [lein-cljsbuild "1.0.0-alpha2"]]

@@ -103,4 +103,4 @@
            (close-log log)
            (make-traces (persistent! ts) doms)))))))
 
-(:traces (time (read-logs "/Users/jcosborn/Projects/gamalyzer/resources/traces/refraction/refraction.5.i.trace" 1 (hash-set) nil)))
+#_(:traces (time (read-logs "/Users/jcosborn/Projects/gamalyzer/resources/traces/refraction/refraction.5.i.trace" 1 (hash-set) nil)))

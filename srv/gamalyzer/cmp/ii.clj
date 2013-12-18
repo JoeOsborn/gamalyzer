@@ -70,7 +70,7 @@
     (if-not (= d1 d2) 1.0
       (* (vs-diss vs1 vs2 [] (get-domains doms d1)) 0.8))))
 
-(let [logs (gamalyzer.read.mario/sample-data)
+#_(let [logs (gamalyzer.read.mario/sample-data)
       vs (:traces logs)
       doms (:domains logs)
       maria (get vs "replay_MariaJesus_38")
@@ -82,22 +82,22 @@
             (get-domains doms [:move]))])
 
 
-(is (= 0.0 (diss (make-input 1 0 :a [:a]) (make-input 0 0 :a [:a]) (make-domains))))
-(is (= 0.8 (diss (make-input 1 0 :a [:a]) (make-input 0 0 :a [:b]) (make-domains))))
-(is (= 1.0 (diss (make-input 1 0 :a [:a]) (make-input 0 0 :b [:a]) (make-domains))))
-(is (= 0.0 (diss (make-input 1 0 [:a :a] [:a]) (make-input 0 0 [:a :a] [:a]) (make-domains))))
-(is (= 1.0 (diss (make-input 1 0 [:a :a] [:a]) (make-input 0 0 [:a :b] [:a]) (make-domains))))
-(is (= 0.4 (diss (make-input 1 0 :a [:a :a]) (make-input 0 0 :a [:a :b]) (make-domains))))
-(is (< 0.26 (diss (make-input 1 0 :a '(a a)) (make-input 0 0 :a '(a b)) (make-domains)) 0.27))
-(is (< 0.53 (diss (make-input 1 0 :a '(a a)) (make-input 0 0 :a '(b a)) (make-domains)) 0.54))
-(is (= 0.0 (diss (make-input 1 0 :a [:a [:a]]) (make-input 0 0 :a [:a [:a]]) (make-domains))))
-(is (= 0.4 (diss (make-input 1 0 :a [:a [:a]]) (make-input 0 0 :a [:a [:b]]) (make-domains))))
-(is (= 0.0 (diss (make-input 1 0 :a [:a [:a :a]]) (make-input 0 0 :a [:a [:a :a]]) (make-domains))))
-(is (= 0.2 (diss (make-input 1 0 :a [:a [:a :a]]) (make-input 0 0 :a [:a [:a :b]]) (make-domains))))
+#_(is (= 0.0 (diss (make-input 1 0 :a [:a]) (make-input 0 0 :a [:a]) (make-domains))))
+#_(is (= 0.8 (diss (make-input 1 0 :a [:a]) (make-input 0 0 :a [:b]) (make-domains))))
+#_(is (= 1.0 (diss (make-input 1 0 :a [:a]) (make-input 0 0 :b [:a]) (make-domains))))
+#_(is (= 0.0 (diss (make-input 1 0 [:a :a] [:a]) (make-input 0 0 [:a :a] [:a]) (make-domains))))
+#_(is (= 1.0 (diss (make-input 1 0 [:a :a] [:a]) (make-input 0 0 [:a :b] [:a]) (make-domains))))
+#_(is (= 0.4 (diss (make-input 1 0 :a [:a :a]) (make-input 0 0 :a [:a :b]) (make-domains))))
+#_(is (< 0.26 (diss (make-input 1 0 :a '(a a)) (make-input 0 0 :a '(a b)) (make-domains)) 0.27))
+#_(is (< 0.53 (diss (make-input 1 0 :a '(a a)) (make-input 0 0 :a '(b a)) (make-domains)) 0.54))
+#_(is (= 0.0 (diss (make-input 1 0 :a [:a [:a]]) (make-input 0 0 :a [:a [:a]]) (make-domains))))
+#_(is (= 0.4 (diss (make-input 1 0 :a [:a [:a]]) (make-input 0 0 :a [:a [:b]]) (make-domains))))
+#_(is (= 0.0 (diss (make-input 1 0 :a [:a [:a :a]]) (make-input 0 0 :a [:a [:a :a]]) (make-domains))))
+#_(is (= 0.2 (diss (make-input 1 0 :a [:a [:a :a]]) (make-input 0 0 :a [:a [:a :b]]) (make-domains))))
 
-(is (< 0.13 (diss (make-input 1 0 :a [:a '(a a)]) (make-input 0 0 :a [:a '(a b)]) (make-domains)) 0.14))
+#_(is (< 0.13 (diss (make-input 1 0 :a [:a '(a a)]) (make-input 0 0 :a [:a '(a b)]) (make-domains)) 0.14))
 
-(let [ia1 (make-input 0 0 :a [1])
+#_(let [ia1 (make-input 0 0 :a [1])
       ia2 (make-input 1 0 :a [2])
       ia3 (make-input 2 0 :a [3])
       ib1 (make-input 0 0 :b [0])
@@ -109,7 +109,7 @@
   (is (= 0.4 (diss ia1 ia2 ds)))
   (is (< 0.080 (diss ib1 ib4 ds) 0.081)))
 
-(let [i1 {:det (list [:play_card 2] (list :library 0) :keep),
+#_(let [i1 {:det (list [:play_card 2] (list :library 0) :keep),
           :vals (list [:p 2] [:p 2] :library)}
       i2 {:det (list [:play_card 2] (list :library 0) :keep),
           :vals (list [:p 2] [:p 2] :library)}

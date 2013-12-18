@@ -48,7 +48,7 @@
         ucd-denom (max s1sz s2sz)]
     (/ ucd-num ucd-denom)))
 
-(defn tst [lim]
+#_(defn tst [lim]
   (time (doall (let [logs (read-logs "/Users/jcosborn/Projects/game/xsb/logs/log.i.trace"
                                      lim
                                      (hash-set :system :random)
@@ -59,4 +59,4 @@
                        y (range (inc x) lim)
                        :let [t1 (nth vss x), t2 (nth vss y)]]
                    [x y (double (diss t1 t2 doms))])))))
-(tst 5)
+#_(tst 5)

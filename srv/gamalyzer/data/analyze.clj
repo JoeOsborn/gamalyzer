@@ -26,7 +26,7 @@
            pivot-sets)))
 
 (defn- count-correct-classifications [n noise]
-  (println "count" (* noise 0.1))
+  (println "count" (* noise 0.15))
   (time (let [logs (map (fn [_] (game-data :synthetic noise))
                         (range 0 n))
               five-pivots (map #(map :label
@@ -38,9 +38,23 @@
            (count-classified 4 #{:a :b :c} five-pivots)
            (count-classified 5 #{:a :b :c} five-pivots)])))
 
-;(time [(count-correct-classifications 10 0)
-;       (count-correct-classifications 10 2)
-;       (count-correct-classifications 10 4)])
+;(mapv (fn [_] (time [(count-correct-classifications 100 0)
+;                     (count-correct-classifications 100 1)
+;                     (count-correct-classifications 100 2)
+;                     (count-correct-classifications 100 3)])) (range 0 10))
+
+;(def class-results [[[100 100 100] [94 98 98] [65 82 89] [37 55 72]]
+;                    [[100 100 100] [91 98 98] [61 78 84] [36 58 72]]
+;                    [[100 100 100] [88 96 97] [72 85 92] [35 54 68]]
+;                    [[100 100 100] [85 99 100] [60 75 86] [36 52 71]]
+;                    [[100 100 100] [93 97 98] [71 85 90] [35 57 73]]
+;                    [[100 100 100] [82 91 94] [67 86 89] [46 63 77]]
+;                    [[100 100 100] [92 100 100] [59 78 87] [41 59 72]]
+;                    [[100 100 100] [93 97 97] [71 86 92] [42 64 77]]
+;                    [[100 100 100] [85 96 98] [68 90 96] [34 58 76]]
+;                    [[100 100 100] [92 98 98] [70 81 88] [33 58 73]]])
+
+;(def avg-results-per-noise (mapv (fn [noise] (mean (mapv #(nth % noise) class-results))) (range 0 4)))
 
 (defn- h-labels- []
   (with-open [r (reader "resources/traces/ortega_shaker/taggedPlayers.csv")]
@@ -63,7 +77,7 @@
               (group-by second labels)))
        (sort labels-by-level)))
 
-(h-labels->memberships h-labels)
+#_(h-labels->memberships h-labels)
 
 (defn all-distances [traces doms]
   (with-warp-window 30
@@ -256,7 +270,7 @@
 (defn not-weird? [[_ ami _]] (< ami 1.0))
 ;(defn not-weird? [[_ ami _]] true)
 
-(let [similarities (filter not-weird? (map #(validate-similarity % false) (range 0 40)))
+#_(let [similarities (filter not-weird? (map #(validate-similarity % false) (range 0 40)))
       ol-similarities (filter not-weird? (map #(validate-similarity % true) (range 0 40)))]
   (println (clojure.string/join \newline similarities))
   (println (clojure.string/join \newline ol-similarities))

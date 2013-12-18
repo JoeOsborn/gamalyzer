@@ -4,7 +4,7 @@
 
 (strokes/bootstrap)
 
-(def mode :mario)
+(def mode :refraction)
 
 (defn log [& stuff]
   (. js/console (log (apply str stuff)))
@@ -73,8 +73,8 @@
                 (set! warp-window w)
                 (reload-data!)))
 
-(make-slider! "width" 400 width 2000 100 (fn [w] (set! width w) (kick! fetched-data)))
-(make-slider! "height" 400 height 2000 100 (fn [h] (set! height h) (kick! fetched-data)))
+(make-slider! "width" 200 width 2000 100 (fn [w] (set! width w) (kick! fetched-data)))
+(make-slider! "height" 100 height 2000 50 (fn [h] (set! height h) (kick! fetched-data)))
 
 (def link-threshold 0.8)
 (def link-strength 0.005) ;(fn [l] (* (- 1 (link-distance l)) 0.01)))

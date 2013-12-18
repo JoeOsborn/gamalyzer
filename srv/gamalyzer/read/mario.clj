@@ -5,8 +5,8 @@
             [gamalyzer.data.input :refer [make-traces make-trace make-input make-domains expand-domain player expand-domain*]])
   (:gen-class :name gamalyzer.read.Mario
               :methods
-              [[^{:static true} readLogs [(Class/forName (into-array (file "/")))] Traces]
-               [^{:static true} readActions [Traces bytes] Traces]]))
+              [[^{:static true} readLogs ["[Ljava.io.File;"] gamalyzer.data.input.Traces]
+               [^{:static true} readActions [gamalyzer.data.input.Traces bytes] gamalyzer.data.input.Traces]]))
 
 (defn byte->bits [i]
   (reverse (map #(bit-test i %) (range 0 8))))
@@ -128,7 +128,7 @@
                  files)]
      traces-and-domains)))
 
-(time (sample-data))
+#_(time (sample-data))
 
 
 (defn -readLogs [files]

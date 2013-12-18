@@ -6,7 +6,10 @@
             [gamalyzer.read.synth :refer [read-logs]]
             [clojure.core.matrix :refer [new-array mget mset! set-current-implementation
                                          dimension-count shape]])
-  (:import [java.lang Double]))
+  (:import [java.lang Double])
+  (:gen-class :name gamalyzer.cmp.tt
+              :methods
+              [[^{:static true} diss [gamalyzer.data.input.Trace gamalyzer.data.input.Trace gamalyzer.data.input.Domains] double]]))
 
 (set-current-implementation :vectorz)
 (defn diss-t [s1 s2 doms] (dist/diss-t s1 s2 doms))
@@ -60,7 +63,9 @@
      [[] mat0]
      (range 0 k))))
 
-(defn tst [n k]
+(defn -diss [a b doms] (dist/diss a b doms))
+
+#_(defn tst [n k]
   (time (doall
          (let [dur 43
                logs (read-logs [[:a (/ n 3) dur {[1 [:a] [:a]] 1.0}]
@@ -73,8 +78,8 @@
                [pivots mat] (pivot-distances k vs doms)]
            [(map :id (map #(nth vs %) pivots)) mat]))))
 
-(tst 10 10)
+#_(tst 10 10)
 
-(let [traces [{:similar-count 53, :id "d73114ff-a682-4709-ba0a-f0f061e2f74f", :inputs [{:time 0, :player 1, :det [:a], :vals [:a]} {:time 1, :player 1, :det [:a], :vals [:a]} {:time 2, :player 1, :det [:a], :vals [:a]} {:time 3, :player 1, :det [:b], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:a]}], :label :ab} {:similar-count 33, :id "57e06a91-a650-4532-92d7-b19dae4d096e", :inputs [{:time 0, :player 1, :det [:b], :vals [:a]} {:time 1, :player 1, :det [:b], :vals [:a]} {:time 2, :player 1, :det [:b], :vals [:a]} {:time 3, :player 1, :det [:b], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:b]}], :label :bc} {:similar-count 16, :id "189b789c-78a3-4934-a1ac-da2fa5c5ccd8", :inputs [{:time 0, :player 1, :det [:a], :vals [:b]} {:time 1, :player 1, :det [:a], :vals [:b]} {:time 2, :player 1, :det [:a], :vals [:b]} {:time 3, :player 1, :det [:a], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:a]}], :label :ac}]
+#_(let [traces [{:similar-count 53, :id "d73114ff-a682-4709-ba0a-f0f061e2f74f", :inputs [{:time 0, :player 1, :det [:a], :vals [:a]} {:time 1, :player 1, :det [:a], :vals [:a]} {:time 2, :player 1, :det [:a], :vals [:a]} {:time 3, :player 1, :det [:b], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:a]}], :label :ab} {:similar-count 33, :id "57e06a91-a650-4532-92d7-b19dae4d096e", :inputs [{:time 0, :player 1, :det [:b], :vals [:a]} {:time 1, :player 1, :det [:b], :vals [:a]} {:time 2, :player 1, :det [:b], :vals [:a]} {:time 3, :player 1, :det [:b], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:b]}], :label :bc} {:similar-count 16, :id "189b789c-78a3-4934-a1ac-da2fa5c5ccd8", :inputs [{:time 0, :player 1, :det [:a], :vals [:b]} {:time 1, :player 1, :det [:a], :vals [:b]} {:time 2, :player 1, :det [:a], :vals [:b]} {:time 3, :player 1, :det [:a], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:a]}], :label :ac}]
       [pivots pivot-mat] (pivot-distances 3 traces (gamalyzer.data.input/expand-domain** traces (gamalyzer.data.input/make-domains)))]
   (map clojure.core.matrix/to-nested-vectors (clojure.core.matrix/slices pivot-mat 2)))

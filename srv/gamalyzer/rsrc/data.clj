@@ -74,29 +74,34 @@
                         [k (/ v new-norm)])
                       kvs))
       [1 [:a] [:a :a]] (/ (+ (or (get kvs [1 [:a] [:a :a]]) 0) (/ pct 3)) new-norm)
-      [1 [:a] [:b :a]] (/ (+ (or (get kvs [1 [:a] [:b :a]]) 0) (/ pct 3)) new-norm)
+      [1 [:a] [:a :b]] (/ (+ (or (get kvs [1 [:a] [:a :b]]) 0) (/ pct 3)) new-norm)
       [1 [:a] [:b :b]] (/ (+ (or (get kvs [1 [:a] [:b :b]]) 0) (/ pct 3)) new-norm))))
 
 (defn synthetic-models [noise]
   (let [how-many 20
         how-long-mean 30
         how-long [(* how-long-mean 0.9) (* how-long-mean 1.1)]]
-    [[:a how-many how-long (noisify noise {[1 [:a] [:a :a]] 0.70
-                                           [1 [:a] [:a :b]] 0.15
-                                           [1 [:a] [:b :b]] 0.15})]
-     [:b how-many how-long (noisify noise {[1 [:a] [:a :a]] 0.15
-                                           [1 [:a] [:a :b]] 0.70
-                                           [1 [:a] [:b :b]] 0.15})]
-     [:c how-many how-long (noisify noise {[1 [:a] [:a :a]] 0.15
-                                           [1 [:a] [:a :b]] 0.15
-                                           [1 [:a] [:b :b]] 0.70})]]))
+    [[:a how-many how-long (noisify noise {[1 [:a] [:a :a]] 1.0
+                                           [1 [:a] [:a :b]] 0.0
+                                           [1 [:a] [:b :b]] 0.0})]
+     [:b how-many how-long (noisify noise {[1 [:a] [:a :a]] 0.0
+                                           [1 [:a] [:a :b]] 1.0
+                                           [1 [:a] [:b :b]] 0.0})]
+     [:c how-many how-long (noisify noise {[1 [:a] [:a :a]] 0.0
+                                           [1 [:a] [:a :b]] 0.0
+                                           [1 [:a] [:b :b]] 1.0})]]))
+
+(synthetic-models 0.0)
+(synthetic-models 0.2903)
+(synthetic-models 0.81815)
+(synthetic-models 2.07692)
 
 
 (defn game-data [game lev]
   (cond
    (= game :mario) (sample-data lev)
    (= game :refraction) (read-logs (str "resources/traces/refraction/refraction." lev ".i.trace"))
-   (= game :synthetic) (gamalyzer.read.synth/read-logs (synthetic-models (* lev 0.1)) (hash-set) nil)))
+   (= game :synthetic) (gamalyzer.read.synth/read-logs (synthetic-models (get {0 0.0, 1 0.2903, 2 0.81815, 3 2.07692} lev)) (hash-set) nil)))
 
 (defn find-pivots [k vs doms]
   (let [n (count vs)

@@ -162,7 +162,7 @@
         ;(println "VEC:" (assign vct (map #(get % 2) fwd-path)))
         (assign vct (map #(get % 2) fwd-path))))))
 
-(let [logs (gamalyzer.read.mario/sample-data)
+#_(let [logs (gamalyzer.read.mario/sample-data)
       vs (:traces logs)
       doms (:domains logs)
       maria (first (filter #(.startsWith (:id %) "replay_MariaJesus_") vs))
@@ -176,7 +176,7 @@
    (diss-t maria emil doms)
    (diss-t maria keith doms)])
 
-(defn tst [lim]
+#_(defn tst [lim]
   (time (doall
          (let [dur 25
                logs (read-logs [[:a (/ lim 3) dur {[1 [:a] [:a]] 1.0}]
@@ -191,9 +191,9 @@
                  :let [t1 (nth vs x), t2 (nth vs y)]]
              [x y (double (diss t1 t2 doms))])))))
 
-(tst 18)
+#_(tst 18)
 
-(defn tst-t [lim]
+#_(defn tst-t [lim]
   (time (doall
          (let [dur 40
                logs (read-logs [[:a (/ lim 4) dur {[1 [:a] [:a]] 1.0}]
@@ -209,9 +209,9 @@
                  :let [t1 (nth vs x), t2 (nth vs y)]]
              [x y (diss-t t1 t2 doms)])))))
 
-(tst-t 10)
+#_(tst-t 10)
 
-(let [vs [{:label :bc, :id "7bb331c9-0347-4704-8265-ec9d3264e750", :inputs [{:vals [:a], :det [:b], :player 1, :time 0} {:vals [:a], :det [:b], :player 1, :time 1} {:vals [:a], :det [:b], :player 1, :time 2} {:vals [:b], :det [:a], :player 1, :time 3} {:vals [:a], :det [:b], :player 1, :time 4} {:vals [:a], :det [:b], :player 1, :time 5} {:vals [:a], :det [:b], :player 1, :time 6} {:vals [:a], :det [:b], :player 1, :time 7} {:vals [:a], :det [:b], :player 1, :time 8} {:vals [:a], :det [:b], :player 1, :time 9}], :similar-count 34} {:label :ab, :id "5cc80077-4c4c-4c27-ab62-1410180f53ee", :inputs [{:vals [:a], :det [:b], :player 1, :time 0} {:vals [:a], :det [:a], :player 1, :time 1} {:vals [:a], :det [:a], :player 1, :time 2} {:vals [:a], :det [:a], :player 1, :time 3} {:vals [:a], :det [:a], :player 1, :time 4} {:vals [:a], :det [:a], :player 1, :time 5} {:vals [:a], :det [:b], :player 1, :time 6} {:vals [:a], :det [:a], :player 1, :time 7} {:vals [:a], :det [:b], :player 1, :time 8} {:vals [:a], :det [:a], :player 1, :time 9}], :similar-count 37}]
+#_(let [vs [{:label :bc, :id "7bb331c9-0347-4704-8265-ec9d3264e750", :inputs [{:vals [:a], :det [:b], :player 1, :time 0} {:vals [:a], :det [:b], :player 1, :time 1} {:vals [:a], :det [:b], :player 1, :time 2} {:vals [:b], :det [:a], :player 1, :time 3} {:vals [:a], :det [:b], :player 1, :time 4} {:vals [:a], :det [:b], :player 1, :time 5} {:vals [:a], :det [:b], :player 1, :time 6} {:vals [:a], :det [:b], :player 1, :time 7} {:vals [:a], :det [:b], :player 1, :time 8} {:vals [:a], :det [:b], :player 1, :time 9}], :similar-count 34} {:label :ab, :id "5cc80077-4c4c-4c27-ab62-1410180f53ee", :inputs [{:vals [:a], :det [:b], :player 1, :time 0} {:vals [:a], :det [:a], :player 1, :time 1} {:vals [:a], :det [:a], :player 1, :time 2} {:vals [:a], :det [:a], :player 1, :time 3} {:vals [:a], :det [:a], :player 1, :time 4} {:vals [:a], :det [:a], :player 1, :time 5} {:vals [:a], :det [:b], :player 1, :time 6} {:vals [:a], :det [:a], :player 1, :time 7} {:vals [:a], :det [:b], :player 1, :time 8} {:vals [:a], :det [:a], :player 1, :time 9}], :similar-count 37}]
       doms (gamalyzer.data.input/expand-domain** vs (gamalyzer.data.input/make-domains))
       vss (map :id vs)]
   (doall (for [a vs
