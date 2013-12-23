@@ -67,8 +67,8 @@
                      54 54 54
                      29 29 29])))
 
-(when-not val-colors (def val-colors {}))
-(when-not cur-color (def cur-color 0))
+(def val-colors {})
+(def cur-color 0)
 (defn wrap [n l]
   (cond
    (>= n l) (wrap (- n l) l)

@@ -1,61 +1,39 @@
 (ns gamalyzer.ui.core
   (:require [strokes :refer [d3]]
-            [gamalyzer.ui.colors :refer [pick-color]]))
+            [gamalyzer.ui.colors :refer [pick-color]]
+            [gamalyzer.ui.util :refer [log
+                                       vectorize median-element pairs
+                                       get-by get-nearest
+                                       clip
+                                       make-slider!]]
+            [gamalyzer.ui.symbols :refer [pick-symbol]]
+            [gamalyzer.ui.layout :refer [layout-xs 
+						                             link-threshold link-strength iterations]]))
 
 (strokes/bootstrap)
 
 (def mode :refraction)
 
-(defn log [& stuff]
-  (. js/console (log (apply str stuff)))
-  (last stuff))
-(set! *print-fn* log)
-
 (def width 400)
 (def height 400)
 (def x (.. (d3.scale.linear) (domain [0 1]) (range [10 (- width 10)])))
 (def y (.. (d3.scale.linear) (domain [0 1]) (range [(- height 10) 10])))
+(defn y->t [v] (max 0 (.round js/Math (.invert y v))))
 
-(when-not info
-  (do
-    (def info (.. d3
-                  (select "body")
-                  (append "div")
-                  (attr "id" "info")
-                  (style "opacity" 0)))
-    (.append info "table")))
+(def level (mode {:mario 0 :refraction 5 :synthetic 0}))
+(def pivot-count 10)
+(def warp-window 20)
+(def fetched-data nil)
 
-(defn make-slider! [id mn v mx st f]
-  (when (= 0 (.size (.select d3 (str "#" id))))
-    (do
-      (.. d3
-          (select "body")
-          (append "div")
-          (attr {:class "slider" :id id})
-          (call (.. (d3.slider)
-                    (axis true)
-                    (min mn)
-                    (value v)
-                    (max mx)
-                    (step st)
-                    (on "slide" (fn [e v] (log "now:" v) (f v))))))
-      (.. d3
-          (select (str "#" id))
-          (insert "div" ":first-child")
-          (attr "class" "slider-label")
-          (text id)))))
+(declare kick!)
 
 (defn reload-data! []
   (strokes/fetch-edn (str (name mode) "?level=" level "&k=" pivot-count "&window=" warp-window)
                      (fn [err root]
                        (log "load" err root)
-;                       (.. d3 (selectAll ".trace") (remove))
                        (set! fetched-data root)
                        (kick! fetched-data))))
 
-(def level (mode {:mario 0 :refraction 5 :synthetic 0}))
-(def pivot-count 10)
-(def warp-window 20)
 (make-slider! "level"
               (mode {:mario 0 :refraction 3 :synthetic 0})
               level
@@ -76,36 +54,23 @@
 (make-slider! "width" 200 width 2000 100 (fn [w] (set! width w) (kick! fetched-data)))
 (make-slider! "height" 100 height 2000 50 (fn [h] (set! height h) (kick! fetched-data)))
 
-(def link-threshold 0.8)
-(def link-strength 0.005) ;(fn [l] (* (- 1 (link-distance l)) 0.01)))
-(defn link-distance [l] (.-distance l))
-(def iterations 100)
-
 (make-slider! "link-threshold" 0.1 link-threshold 1.0 0.05 (fn [t] (set! link-threshold t) (kick! fetched-data)))
 (make-slider! "link-strength" 0.0 link-strength 0.005 0.0001 (fn [t] (set! link-strength t) (kick! fetched-data)))
 (make-slider! "iterations" 0 iterations 100 20 (fn [i] (set! iterations i) (kick! fetched-data)))
 
-(when-not svg (.. d3
-                  (select "body")
-                  (append "svg")
-                  (attr {:id "svg" :width width :height height})))
+(.. d3
+	(select "body")
+	(append "svg")
+	(attr {:id "svg" :width width :height height}))
 (def svg (.select d3 "body > svg"))
 (.attr svg {:width width :height height})
 
-(defn get-by [pred s]
-  (first (filter pred s)))
-
-(defn get-nearest [keyfn s i]
-  (if (and (contains? s i) (keyfn (nth s i)))
-    [i (nth s i)]
-    (loop [off 0]
-      (let [lo (- i off)
-            hi (+ i off)]
-        (cond
-         (and (contains? s lo) (keyfn (nth s lo))) [lo (nth s lo)]
-         (and (contains? s hi) (keyfn (nth s hi))) [hi (nth s hi)]
-         (and (< lo 0) (>= hi (count s))) [nil nil]
-         true (recur (inc off)))))))
+(def info (.. d3
+              (select "body")
+              (append "div")
+              (attr "id" "info")
+              (style "opacity" 0)))
+(.append info "table")
 
 (defn get-nearest-position [inputs i]
   (if-let [inp (second (get-nearest :position inputs i))]
@@ -129,16 +94,6 @@
                       (range min-t (inc max-t)))))))
        traces))
 
-(defn vectorize [s]
-  (if (sequential? s)
-    (into [] (map vectorize s))
-    s))
-
-(defn median-element [s]
-  (if (empty? s)
-    nil
-    (nth s (.floor js/Math (/ (count s) 2)))))
-
 (defn highlight-selected! [mode pred]
   (.. d3
       (selectAll ".trace")
@@ -159,62 +114,65 @@
                  (apply min (map :time inputs))
                  (apply max (map :time inputs))))))
 
-(defn show-infobox! [symbols-by-trace ex ey]
-  (let [sorted-traces (sort-by #(first (:position (median-element %)))
-                               symbols-by-trace)
-        traces-by-time (d3.transpose (vectorize sorted-traces))
-        info-elt (.getElementById js/document "info")]
-    (.. info
-        (select "table")
-        (selectAll "tr")
-        (remove))
-    (.. info
-        (select "table")
-        (selectAll "tfoot")
-        (remove))
-    (.. info
-        (select "table")
-        (selectAll "tr")
-        (data (vec traces-by-time))
-        (enter)
-        (append "tr"))
-    (.. info
-        (select "table")
-        (selectAll "tr")
-        (data (fn [] traces-by-time))
-        (selectAll "td")
-        (data (fn [d i] d))
-        (enter)
-        (append "td")
-        (style "background-color"
-               (fn [d] (pick-color (:vals d) 0.8)))
-        (text (fn [d]
-                (apply str (:time d) ". "
-                     (when-not (:dummy d)
-                       [(:player d) " " (:det d) " " (:vals d)])))))
-    (.. info
-        (select "table")
-        (append "tfoot")
-        (append "tr")
-        (selectAll "td")
-        (data (map first sorted-traces))
-        (enter)
-        (append "td")
-        (text (fn [d]
-                (str (:id d) "(" (:similar-count d) ")"))))
-    (.style info {:left (+ ex 8)
-                  :top (- ey (/ (.-clientHeight info-elt) 2))})
-    (.. info
-        (transition)
-        (duration 100)
-        (style "opacity" 0.9))))
-(defn hide-infobox! []
+(defn fade-infobox! [opacity]
   (.. info
       (transition)
       (duration 100)
-      (style "opacity" 0.0)))
+      (style "opacity" opacity)))
 
-(defn y->t [v] (max 0 (.round js/Math (.invert y v))))
+(defn clear-infobox! []
+  (.. info
+        (select "table")
+        (selectAll "tr")
+        (remove))
+  (.. info
+      (select "table")
+      (selectAll "tfoot")
+      (remove)))
+
+(defn show-infobox-inputs! [traces-by-time]
+  (.. info
+      (select "table")
+      (selectAll "tr")
+      (data traces-by-time)
+      (enter)
+      (append "tr"))
+  (.. info
+      (select "table")
+      (selectAll "tr")
+      (data (fn [] traces-by-time))
+      (selectAll "td")
+      (data (fn [d i] d))
+      (enter)
+      (append "td")
+      (style "background-color" (fn [d] (pick-color (:vals d) 0.8)))
+      (text (fn [d] (apply str (:time d) ". "
+                           (when-not (:dummy d)
+                             [(:player d) " " (:det d) " " (:vals d)]))))))
+
+(defn show-infobox-footer! [sorted-traces]
+  (.. info
+      (select "table")
+      (append "tfoot")
+      (append "tr")
+      (selectAll "td")
+      (data (map first sorted-traces))
+      (enter)
+      (append "td")
+      (text (fn [d]
+              (str (:id d) "(" (:similar-count d) ")")))))
+
+(defn show-infobox! [symbols-by-trace ex ey]
+  (let [sorted-traces (sort-by #(first (:position (median-element %)))
+                               symbols-by-trace)]
+    (clear-infobox!)
+    (show-infobox-inputs! (vec (d3.transpose (vectorize sorted-traces))))
+    (show-infobox-footer! sorted-traces)
+    (.style info {:left (+ ex 8)
+                  :top (- ey (/ (.-clientHeight (.getElementById js/document "info")) 2))})
+    (fade-infobox! 0.9)))
+
+(defn hide-infobox! [] (fade-infobox! 0))
 
 (defn input-contained-fn [min-x min-y max-x max-y]
   (fn [input]
@@ -222,6 +180,9 @@
       (and (<= min-x x max-x)
            (<= min-y y max-y)))))
 
+(defn tip-mouse-out [d i]
+  (highlight-selected! "selected-info" (fn [_] false))
+  (hide-infobox!))
 (defn tip-mouse-move [d i]
   (let [e d3.event
         svg-element (.getElementById js/document "svg")
@@ -243,88 +204,75 @@
                                                  max-x max-y))
         (show-infobox! traces (.-pageX e) (.-pageY e)))
       (tip-mouse-out d i))))
-(defn tip-mouse-out [d i]
-  (highlight-selected! "selected-info" (fn [_] false))
-  (hide-infobox!))
 
 (.on svg "mouseover" tip-mouse-move)
 (.on svg "mousemove" tip-mouse-move)
 (.on svg "mouseout" tip-mouse-out)
 
-(def all-symbols (vec d3.svg.symbolTypes))
-(defn next-symbol [n]
-  (nth (cycle all-symbols) n))
-
-(when-not symbols (def symbols {}))
-(defn pick-symbol [det]
-  (when-not (get symbols det)
-    (set! symbols (assoc symbols det (next-symbol (count symbols)))))
-  (get symbols det))
-
-(defn assign-symbol [inp]
-  (let [det (:det inp)
-        sym (pick-symbol det)]
-    (.. (d3.svg.symbol) (type sym))))
-
 (def input-line (.interpolate (d3.svg.line) "linear"))
-
 (def stroke-width (.. (d3.scale.linear) (domain [0 1]) (range [0 5])))
-
 (defn trace-id [t] (get t :id))
 
-(defn add-layers! [traces xs-per-layer]
-  (let [traces-with-positions
-        (map-indexed
-         (fn [i t]
-           (assoc t
-             :inputs
-             (map-indexed (fn [j inp]
-                            (let [ix (nth (nth xs-per-layer j) i)]
-                              (assoc inp
-                                :position (array (x ix) (y j))
-                                :id (:id t)
-                                :similar-count (:similar-count t))))
-                          (:inputs t))))
-         traces)
-        trace-layers (.. svg
+(defn include-positions [traces xs-per-layer]
+  (map-indexed
+   (fn [i t]
+     (assoc t
+       :inputs
+       (map-indexed (fn [j inp]
+                      (let [ix (nth (nth xs-per-layer j) i)]
+                        (assoc inp
+                          :position (array (x ix) (y j))
+                          :id (:id t)
+                          :similar-count (:similar-count t))))
+                    (:inputs t))))
+   traces))
+
+(defn update-trace-layers! [traces-with-positions]
+  (let [trace-layers (.. svg
                          (selectAll ".trace")
-                         (data (vec traces-with-positions) trace-id))
-        _ (.. trace-layers
-              (exit)
-              (remove))
-        _ (.. trace-layers
-              (enter)
-              (append "svg:g")
-              (attr "class" "trace"))
-        each-line (.. trace-layers
+                         (data traces-with-positions trace-id))]
+    (.. trace-layers
+        (exit)
+        (remove))
+    (.. trace-layers
+        (enter)
+        (append "svg:g")
+        (attr "class" "trace"))
+    trace-layers))
+
+(defn update-trace-lines! [trace-layers]
+  (let [each-line (.. trace-layers
                       (selectAll ".trace_line")
-                      (data (fn [d i] [d])))
-        _ (.. each-line
-              (enter)
-              (append "svg:path")
-              (attr {:class "trace_line"
-                     :stroke "currentColor"
-                     :fill "none"
-                     :color "gray"}))
-        _ (.. each-line
-              (attr {:stroke-width
-                     (fn [d i] (stroke-width
-                                (if (zero? (:similar-count d))
-                                  1
-                                  (:similar-count d))))
-                     :d
-                     (fn [d] (input-line (map :position
-                                              (:inputs d))))}))
-        each-trace (.. trace-layers
+                      (data (fn [d i] [d])))]
+    (.. each-line
+        (enter)
+        (append "svg:path")
+        (attr {:class "trace_line"
+               :stroke "currentColor"
+               :fill "none"
+               :color "gray"}))
+    (.. each-line
+        (attr {:stroke-width
+               (fn [d i] (stroke-width
+                          (if (zero? (:similar-count d))
+                            1
+                            (:similar-count d))))
+               :d
+               (fn [d] (input-line (map :position
+                                        (:inputs d))))}))
+    each-line))
+
+(defn update-trace-inputs! [trace-layers]
+  (let [each-trace (.. trace-layers
                        (selectAll ".input")
-                       (data (fn [d i] (:inputs d))))
-        _ (.. each-trace
+                       (data (fn [d i] (:inputs d))))]
+    (.. each-trace
               (enter)
               (append "svg:path")
               (attr {:class "input"
                      :stroke "currentColor"
                      :fill "currentColor"}))
-        _ (.. each-trace
+    (.. each-trace
               (attr {:color (fn [d] (pick-color (:vals d)))
                      :transform
                      (fn [d i j]
@@ -334,62 +282,18 @@
                             (nth (:position d) 1)
                             ")"))
                      :d (.type (d3.svg.symbol)
-                               (fn [d] (pick-symbol (:det d))))}))]
+                               (fn [d] (pick-symbol (:det d))))}))
+    each-trace))
+
+(defn update-layers! [traces xs-per-layer]
+  (let [traces-with-positions (vec (include-positions traces xs-per-layer))
+        trace-layers (update-trace-layers! traces-with-positions)]
+    (update-trace-lines! trace-layers)
+    (update-trace-inputs! trace-layers)
     trace-layers))
 
-(defn pairs [s] (mapcat (fn [l] (map (fn [r] [l r]) s)) s))
-(defn clip [l m h] (cond (< m l) l (> m h) h true m))
 
-(defn make-nodes [init-xs slices node-index]
-  (let [ar (object-array (* (count slices) (count init-xs)))]
-    (doseq [t (range 0 (count slices))
-            i (range 0 (count init-xs))
-            :let [xv (nth init-xs i)
-                  obj (js-obj "x" xv "t" t "trace" i)
-                  idx (node-index i t)]]
-      (aset ar idx obj))
-    ar))
-
-(defn intra-layer-links [init-xs slices node-index]
-  (let [ar (array)]
-    (doseq [t (range 0 (count slices))
-            :let [layer (nth slices (max 1 t))]
-            si (range 0 (count layer))
-            :let [s1l (nth layer si)]
-            sj (range 0 (count s1l))
-            :when (not (= si sj))
-            :let [sqdist (nth s1l sj)
-                  dist (.sqrt js/Math sqdist)]
-            :when (< dist link-threshold)
-            :let [obj (js-obj "source" (node-index si t)
-                              "target" (node-index sj t)
-                              "distance" (identity dist))
-                  idx (count ar)]]
-      (aset ar idx obj))
-    ar))
-
-(defn layout-xs [init-xs slices]
-  (let [layout (.. (d3.layout.force)
-                   (size [1 (count slices)])
-                   (gravity 0)
-                   (charge 0)
-                   (linkStrength link-strength))
-        node-index (fn [s t] (+ s (* t (count init-xs))))
-        lnodes-js (make-nodes init-xs slices node-index)
-        llinks-layers-js (intra-layer-links init-xs slices node-index)]
-    (.on layout "tick" (fn []
-                         (doseq [n lnodes-js]
-                           (set! (.-y n) (.-t n))
-                           (set! (.-x n) (clip 0 (.-x n) 1)))))
-    (.nodes layout lnodes-js)
-    (.links layout llinks-layers-js)
-    (.linkDistance layout link-distance)
-    (.start layout)
-    (dotimes [_ iterations] (.tick layout))
-    (.stop layout)
-    (partition (count init-xs) (map #(.-x %) lnodes-js))))
-
-(when-not brush (def brush (.. svg (append "g") (attr "class" "brush"))))
+(def brush (.. svg (append "g") (attr "class" "brush")))
 
 (def *custom-vis-fn* nil)
 
@@ -431,7 +335,7 @@
              [0 (apply max 10 (map :similar-count pivots))])
     (prepare-brush!)
     (let [xs (time (layout-xs init-xs slices))]
-      (time (add-layers! pivots xs))))
+      (time (update-layers! pivots xs))))
   (custom-vis))
 
 (if fetched-data
