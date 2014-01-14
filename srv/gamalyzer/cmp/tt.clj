@@ -9,7 +9,7 @@
   (:import [java.lang Double])
   (:gen-class :name gamalyzer.cmp.tt
               :methods
-              [[^{:static true} diss [gamalyzer.data.input.Trace gamalyzer.data.input.Trace gamalyzer.data.input.Domains] double]]))
+              [^{:static true} [diss [gamalyzer.data.input.Trace gamalyzer.data.input.Trace gamalyzer.data.input.Domains] double]]))
 
 (set-current-implementation :vectorz)
 (defn diss-t [s1 s2 doms] (dist/diss-t s1 s2 doms))
