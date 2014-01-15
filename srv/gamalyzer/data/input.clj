@@ -5,7 +5,7 @@
 (defrecord Input [time player det vals])
 (defrecord Domains [])
 (defrecord Trace [id inputs])
-(defrecord Traces [traces domains])
+(defrecord Traces [traces ^gamalyzer.data.input.Domains domains])
 
 (defn make-input [ts pl det inp] (Input. ts pl det inp))
 (defn input? [i] (instance? Input i))

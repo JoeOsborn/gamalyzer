@@ -8,6 +8,13 @@
               [^{:static true} [readLogs ["[Ljava.io.File;"] gamalyzer.data.input.Traces]
                ^{:static true} [readActions [gamalyzer.data.input.Traces bytes] gamalyzer.data.input.Traces]]))
 
+(defn mappify [t]
+  (cond
+   (map? t) (into (hash-map) (map (fn [[k v]]
+                                    [(mappify k) (mappify v)]) t))
+   (coll? t) (map mappify t)
+   true t))
+
 (defn byte->bits [i]
   (reverse (map #(bit-test i %) (range 0 8))))
 
@@ -28,7 +35,7 @@
 
 (defn bytes->input [t quantize some-bytes]
   (samples->input t quantize
-                  (map #(nthrest (byte->bits) 2)
+                  (map #(nthrest (byte->bits %) 2)
                        some-bytes)))
 
 (defn csv->input [t quantize some-strings]
@@ -70,8 +77,9 @@
       (throw (.InvalidArgumentException
               (str "Path " path " is neither ACT nor CSV."))))
     (with-open [f (if is-act (input-stream fl) (reader fl))]
-      (let [id (if is-act
-                 (.getName (.getParentFile fl))
+      (let [pfile (.getParentFile fl)
+				    id (if is-act
+                 (if pfile (.getName pfile) (.getName fl))
                  (subs fname 0 (- (count fname) 4)))
             ba (when is-act (byte-array samples-per-frame))]
         (loop [inputs (transient [])
@@ -130,7 +138,6 @@
 
 #_(time (sample-data))
 
-
 (defn -readLogs [files]
   (reduce (fn [{traces :traces
                 doms :domains} file]
@@ -141,16 +148,27 @@
           (make-traces [] (make-domains))
           files))
 
+(defn replace-last [s elt] (conj (butlast s) elt))
+
 (defn -readActions [{doms :domains} actions]
   ;group actions into chunks of size samples-per-frame
   ;pad the last chunk with 0s
   (let [samples-per-frame 24
+        quantize 4
         byte-groups (partition samples-per-frame actions)
         last-group (last byte-groups)
-        padded-byte-groups (reduce (fn [g _] (conj g 0))
-                                   last-group
-                                   (range (count last-group)
-                                          samples-per-frame))
-        inputs (map-indexed bytes->input padded-byte-groups)
-        new-doms expand-domain* inputs doms]
+        padded-byte-groups (replace-last byte-groups (reduce (fn [g _] (conj g 0))
+                                                             last-group
+                                                             (range (count last-group)
+                                                                    samples-per-frame)))
+        inputs (map-indexed #(bytes->input %1 quantize %2) padded-byte-groups)
+        new-doms (expand-domain* inputs doms)]
     (make-traces [(make-trace :synthetic inputs)] new-doms)))
+
+#_(with-open [in (input-stream "/Users/jcosborn/Projects/gamalyzer/resources/traces/mario/lazy-forward/actions.act")]
+  (let [{ts :traces doms :domains} (read-log-trace "/Users/jcosborn/Projects/gamalyzer/resources/traces/mario/lazy-cig-sergeykarakovskiy/actions.act" #{} (make-domains))
+        bcount (.available in)
+        the-bytes (byte-array bcount)
+        _ (.read in the-bytes)
+        nts (-readActions (make-traces ts doms) the-bytes)]
+    (println (mappify nts))))
