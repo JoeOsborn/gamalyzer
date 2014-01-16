@@ -1,6 +1,9 @@
 (ns gamalyzer.data.input
   (:require [multiset.core :refer [multiset? multiset]]
-            [gamalyzer.data.range :refer [range? make-range expand-range]]))
+            [gamalyzer.data.range :refer [range? make-range expand-range]])
+	(:gen-class :name gamalyzer.data.input
+							:methods
+							[^{:static true} [trim [gamalyzer.data.input.Trace int] gamalyzer.data.input.Trace]]))
 
 (defrecord Input [time player det vals])
 (defrecord Domains [])
@@ -63,6 +66,11 @@
 
 (defn expand-domain** [traces doms]
   (reduce #(expand-domain* (:inputs %2) %1) doms (vec traces)))
+
+(defn -trim [trace len]
+	(Trace. (:id trace) (take len (:inputs trace))))
+
+#_(-trim (Trace. "0" [1 2 3 4 5]) 3)
 
 ;(expand-domain (make-input 0 0 :a '(1)) (make-domains))
 ;(expand-domain (make-input 0 0 :a '((1))) (make-domains))
