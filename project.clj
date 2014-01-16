@@ -23,7 +23,7 @@
   :jar-exclusions [#"(?:^|/).svn/"
 	                 #"traces/"
 									 #"maven_repository/"]
-  :aot [gamalyzer.data.input gamalyzer.read.mario gamalyzer.cmp.tt]
+  :aot [gamalyzer.data.input gamalyzer.data.input.util gamalyzer.read.mario gamalyzer.cmp.tt]
   :repositories {"project" "file:maven_repository"}
   :plugins [[lein-ring "0.8.7"]
             [lein-cljsbuild "1.0.0-alpha2"]]
