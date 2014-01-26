@@ -10,7 +10,7 @@ To change the game being visualized, you have to modify `vis/cli/gamalyzer/ui/co
 
 You might also need to implement a new reader module if you can't output the native Gamalyzer format provided by `gamalyzer.read.edn`. This is a series of EDN terms with a header like `[:properties ([:game game-name] [:events (:i)] ...)]`, where `(:i)` indicates "only inputs are found in this trace" (as opposed to other types of game events). Each individual trace begins with `[:log_start UUID]`, ends with `:log_end`, and consists of a series of terms `[:i player-id decision-module (decision-location-term+) choice-id (choice-term+)]`. Every one of those can be any EDN term, as far as I know. See the paper for details.
 
-Note that `read-logs` reads multiple trace logs from a single file. Fill up a `Traces` record and thread through a `Domains` past multiple calls to `read-logs` to read in several files worth of logs.
+Note that `read-logs` can read multiple trace logs from a single file (in its four-argument version) or from a sequence of paths (in its three-argument version).
 
 ##Calculating the metric (Clojure)##
 
