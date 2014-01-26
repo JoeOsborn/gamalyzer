@@ -1,11 +1,10 @@
-(defproject gamalyzer "0.1.0-SNAPSHOT"
+(defproject gamalyzer-vis "0.2.0-SNAPSHOT"
   :description "Generic visualization of game play traces."
   :url "http://github.com/JoeOsborn/gamalyzer"
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/core.cache "0.6.3"]
                  [org.clojure/core.memoize "0.5.6"]
                  [org.clojure/math.combinatorics "0.0.7"]
-                 [org.apache.commons/commons-compress "1.6"]
                  [compojure "1.1.5"]
                  [hiccup "1.0.4"]
                  [ring "1.2.1"]
@@ -18,15 +17,15 @@
                  [de.uni-konstanz.inf.algo/mdsj "0.2"]
                  [apporiented.com/hierarchical-clustering "1.0"]
                  [clojure-csv/clojure-csv "2.0.1"]
-                 [org.clojure/clojurescript "0.0-2030"]
-                 [net.drib/strokes "0.5.1"]]
-  :jar-exclusions [#"(?:^|/).svn/"
-	                 #"traces/"
-									 #"maven_repository/"]
-  :aot [gamalyzer.data.input gamalyzer.data.input.util gamalyzer.read.mario gamalyzer.cmp.tt]
-  :repositories {"project" "file:maven_repository"}
+                 [org.clojure/clojurescript "0.0-2138"]
+                 [net.drib/strokes "0.5.1"]
+								 [gamalyzer-metric "0.2.0-SNAPSHOT"]]
+;  :jar-exclusions [#"(?:^|/).svn/"
+;	                 #"traces/"]
+;  :aot []
+  :repositories {"project" "file:../maven_repository"}
   :plugins [[lein-ring "0.8.7"]
-            [lein-cljsbuild "1.0.0-alpha2"]]
+            [lein-cljsbuild "1.0.1"]]
   :source-paths ["srv"]
   :ring {:handler gamalyzer.handler/app
          :init gamalyzer.handler/init
@@ -41,7 +40,7 @@
     :builds [{:id "cli"
               :source-paths ["cli"]
               :compiler {
-                :output-to "resources/public/js/gamalyzer.js"
-                :output-dir "resources/public/js"
+                :output-to "resources/public/js/generated/gamalyzer.js"
+                :output-dir "resources/public/js/generated"
                 :optimizations :none
                 :source-map true}}]})

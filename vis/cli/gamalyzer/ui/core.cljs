@@ -7,12 +7,12 @@
                                        clip
                                        make-slider!]]
             [gamalyzer.ui.symbols :refer [pick-symbol]]
-            [gamalyzer.ui.layout :refer [layout-xs 
+            [gamalyzer.ui.layout :refer [layout-xs
 						                             link-threshold link-strength iterations]]))
 
 (strokes/bootstrap)
 
-(def mode :refraction)
+(def mode :mario)
 
 (def width 400)
 (def height 400)
