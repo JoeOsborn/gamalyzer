@@ -14,6 +14,6 @@ pom.xml
 .nrepl-port
 /resources/public/js/
 /resources/traces/ortega_shaker/
+/resources/traces/refraction/
 srv/.lein-repl-history
-
 .lein-repl-history
