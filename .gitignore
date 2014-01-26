@@ -15,5 +15,6 @@ pom.xml
 /resources/public/js/
 /resources/traces/ortega_shaker/
 /resources/traces/refraction/
+/resources/traces/mario/
 srv/.lein-repl-history
 .lein-repl-history
