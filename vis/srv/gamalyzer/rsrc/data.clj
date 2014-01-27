@@ -6,14 +6,11 @@
             [gamalyzer.cmp.tt :refer [pivot-distances]]
             [gamalyzer.cmp.tt.cced :refer [with-warp-window]]
 						[gamalyzer.data.util :refer [mappify]]
-            [clojure.core.matrix :refer [set-current-implementation mutable
-                                         slices to-nested-vectors new-array
+            [clojure.core.matrix :refer [mutable slices to-nested-vectors new-array
                                          mget mset! shape square dimension-count
                                          submatrix to-nested-vectors get-row]])
   (:import [java.util UUID]
            [mdsj MDSJ]))
-
-(set-current-implementation :vectorz)
 
 (defn assign-vec-at! [m & indices-vec]
   (let [vct (last indices-vec)
@@ -30,7 +27,7 @@
   ;so we need a mapping from pivots->traces
   (let [trace-indices (zipmap (map :id traces) (range))
         pivot-trace-indices (map #(get trace-indices %) pivot-ids)
-        kxkxd (new-array [(count pivot-ids) (count pivot-ids) (dimension-count kxnxd 2)])]
+        kxkxd (new-array :vectorz [(count pivot-ids) (count pivot-ids) (dimension-count kxnxd 2)])]
     (doseq [pi (range 0 (count pivot-trace-indices))
             pj (range 0 (count pivot-trace-indices))
             :let [pti (nth pivot-trace-indices pj)

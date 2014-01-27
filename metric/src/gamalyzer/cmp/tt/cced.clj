@@ -4,11 +4,9 @@
             [clojure.math.numeric-tower :refer [abs ceil floor]]
             [clojure.math.combinatorics :refer [cartesian-product]]
             [clojure.core.matrix :refer [new-matrix mget mset! fill fill! assign shape
-                                         new-vector
-                                         set-current-implementation]])
+                                         new-vector]])
   (:import [java.lang Double System]))
 
-(set-current-implementation :vectorz)
 ;;;; Constrained continuous editing distance (dynamic programming implementation)
 ;;;; after Chhieng & Wong, "Adaptive Distance Measurement for Time Series Databases"
 ;;;; We use a warp window to keep the comparisons relevant, knowing a priori that
@@ -23,7 +21,7 @@
 (def ins-cost 1.0)
 
 (defn- init-matrix [m n]
-  (let [mat (new-matrix m n)]
+  (let [mat (new-matrix :vectorz m n)]
     (fill! mat Double/POSITIVE_INFINITY)
     (mset! mat 0 0 0.0)
     (doall
@@ -158,13 +156,13 @@
         t2 (:inputs s2)
         len (+ (count t1) (count t2))]
     (if (= (:id s1) (:id s2))
-      (new-vector (max (count s1) (count s2)))
+      (new-vector :vectorz (max (count s1) (count s2)))
       (let [[dist path] (distance t1 t2 doms)
             len (count path)
             fwd-path path
             ;fwd-path (resample-path path len)
             ;fwd-path (map #(get % 2) (filter #(not (= (get % 3) :delete)) path))
-            vct (new-vector (count fwd-path))]
+            vct (new-vector :vectorz (count fwd-path))]
 ;        (when-not (== (count fwd-path) len) (println "path " fwd-path " is " (count fwd-path) ", not " (inc len)))
         ;(println (:label s1) (:label s2))
         ;(println "P:" path)

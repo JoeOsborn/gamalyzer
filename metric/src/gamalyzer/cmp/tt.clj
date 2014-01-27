@@ -3,7 +3,7 @@
             [clojure.core.cache :as cache]
             [clojure.math.numeric-tower :refer [abs]]
             [clojure.math.combinatorics :refer [cartesian-product]]
-            [clojure.core.matrix :refer [new-array mget mset! set-current-implementation
+            [clojure.core.matrix :refer [new-array mget mset!
                                          dimension-count shape eseq]])
   (:import [java.lang Double])
   (:gen-class :name gamalyzer.cmp.tt
@@ -11,7 +11,6 @@
               [^{:static true} [diss [gamalyzer.data.input.Trace gamalyzer.data.input.Trace gamalyzer.data.input.Domains int] double]
 							 ^{:static true} [dissimilarities [gamalyzer.data.input.Trace gamalyzer.data.input.Trace gamalyzer.data.input.Domains int] doubles]]))
 
-(set-current-implementation :vectorz)
 (defn diss-t [s1 s2 doms] (dist/diss-t s1 s2 doms))
 
 (defn best-pivot-distance [mat pivots n]
@@ -53,7 +52,7 @@
 (defn pivot-distances [k traces doms]
   (let [n (count traces)
         max-length (apply max (map #(count (:inputs %)) traces))
-        mat0 (new-array [k n max-length])]
+        mat0 (new-array :vectorz [k n max-length])]
     (reduce
      (fn [[pivots mat] ki]
          (let [pivot-index (select-pivot pivots mat traces)
