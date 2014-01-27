@@ -27,23 +27,32 @@
   ;so we need a mapping from pivots->traces
   (let [trace-indices (zipmap (map :id traces) (range))
         pivot-trace-indices (map #(get trace-indices %) pivot-ids)
-        kxkxd (new-array :vectorz [(count pivot-ids) (count pivot-ids) (dimension-count kxnxd 2)])]
+        kxkxd (new-array :vectorz [(count pivot-ids)
+																	 (count pivot-ids)
+																	 (dimension-count kxnxd 2)])]
     (doseq [pi (range 0 (count pivot-trace-indices))
             pj (range 0 (count pivot-trace-indices))
             :let [pti (nth pivot-trace-indices pj)
-                  mat-kxn (get-row (get-row (submatrix kxnxd [[pi 1] [pti 1] nil]) 0) 0)]]
-      ;(println "pi" pi "(" (:label (nth traces (nth pivot-trace-indices pi))) ")->" pti "(" (:label (nth traces pti)) "):" mat-kxn)
+                  mat-kxn (get-row
+													 (get-row
+														(submatrix kxnxd [[pi 1] [pti 1] nil])
+														0)
+													 0)]]
       (assign-vec-at! kxkxd pi pj mat-kxn))
     kxkxd))
 
+(defn min-pivot-index [col-n]
+	(apply min-key
+				 #(mget col-n % (dec (dimension-count col-n 1)))
+				 (range 0 (dimension-count col-n 0))))
+
 (defn tally-similars [mat pivot-ids traces]
   (reduce (fn [sims col-n]
-            (let [min-pivot (apply min-key
-                                   #(mget col-n % (dec (dimension-count col-n 1)))
-                                   (range 0 (dimension-count col-n 0)))
+            (let [min-pivot (min-pivot-index col-n)
                   min-pivot-id (nth pivot-ids min-pivot)
                   so-far (get sims min-pivot-id)]
-              (assoc sims min-pivot-id (if so-far (+ so-far 1) 1))))
+              (assoc sims
+								min-pivot-id (if so-far (inc so-far) 1))))
           {}
           (slices mat 1)))
 
@@ -60,20 +69,25 @@
     half-centered))
 
 (defn x-coords [kxk]
-  (normalize-and-align (vec (first (MDSJ/stressMinimization (into-array (map double-array kxk)) 1)))))
+  (normalize-and-align
+	 (vec (first (MDSJ/stressMinimization
+								(into-array (map double-array kxk))
+								1)))))
 
 (defn noisify [pct kvs]
-  ;reduce each v by pct/count vs
-  ;insert noise: 0.5 pct chance of X, 0.5 pct chance of Y
-  (let [num-entries (count kvs)
-        new-norm (+ 1.0 pct)]
-    (assoc (into (hash-map)
+  ;reduce likelihood of each v by pct
+  (let [new-norm (+ 1.0 pct)
+				renorm-keyvals (fn [k]
+												 [k (/ (+ (or (get kvs k) 0) (/ pct 3))
+															 new-norm)])]
+    (conj (into (hash-map)
                  (map (fn [[k v]]
                         [k (/ v new-norm)])
                       kvs))
-      [1 [:a] [:a :a]] (/ (+ (or (get kvs [1 [:a] [:a :a]]) 0) (/ pct 3)) new-norm)
-      [1 [:a] [:a :b]] (/ (+ (or (get kvs [1 [:a] [:a :b]]) 0) (/ pct 3)) new-norm)
-      [1 [:a] [:b :b]] (/ (+ (or (get kvs [1 [:a] [:b :b]]) 0) (/ pct 3)) new-norm))))
+					(map renorm-keyvals
+							 [[1 [:a] [:a :a]]
+								[1 [:a] [:a :b]]
+								[1 [:a] [:b :b]]]))))
 
 (defn synthetic-models [noise]
   (let [how-many 20
@@ -111,8 +125,6 @@
         pivot-mat (kxnxd->kxkxd msq pivot-ids vs)
         similars (tally-similars msq pivot-ids vs)
         pivot-diffs-t (map to-nested-vectors (slices pivot-mat 2))]
-;    (println "VS:" vs)
-;    (println (gamalyzer.cmp.tt/diss-t (get vs "replay_MariaJesus_38") (get vs "replay_Emil_38") doms))
     [(map #(or (:label %) (:id %)) pivots)
      (map #(assoc % :similar-count (or (get similars (:id %)) 0)) pivots)
      pivot-diffs-t

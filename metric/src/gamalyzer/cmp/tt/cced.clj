@@ -3,8 +3,9 @@
             [clojure.core.cache :as cache]
             [clojure.math.numeric-tower :refer [abs ceil floor]]
             [clojure.math.combinatorics :refer [cartesian-product]]
-            [clojure.core.matrix :refer [new-matrix mget mset! fill fill! assign shape
-                                         new-vector]])
+            [clojure.core.matrix :refer [new-matrix new-vector
+																				 fill fill! assign shape
+                                         mget mset!]])
   (:import [java.lang Double System]))
 
 ;;;; Constrained continuous editing distance (dynamic programming implementation)
@@ -32,12 +33,22 @@
        (mset! mat 0 y (+ (mget mat 0 (dec y)) ins-cost))))
     mat))
 
-(defn preds [mat x y]
+(defn- preds [mat x y]
   (let [v (mget mat x y) px (dec x) py (dec y)]
     (concat
-     (if (and (> x 0) (> y 0) (< (abs (- v (mget mat px py))) 1.0)) [[px py]] [])
-     (if (and (> x 0) (<= (abs (- v (mget mat px y))) (+ ins-cost 0.01))) [[px y]] [])
-     (if (and (> y 0) (<= (abs (- v (mget mat x py))) (+ del-cost 0.01))) [[x py]] []))))
+     (if (and (> x 0)
+							(> y 0)
+							(< (abs (- v (mget mat px py))) 1.0))
+			 [[px py]]
+			 [])
+     (if (and (> x 0)
+							(<= (abs (- v (mget mat px y))) (+ ins-cost 0.01)))
+			 [[px y]]
+			 [])
+     (if (and (> y 0)
+							(<= (abs (- v (mget mat x py))) (+ del-cost 0.01)))
+			 [[x py]]
+			 []))))
 
 (defn- norm-score ^double [s l1 l2]
   (if (and (== l1 0) (== l2 0))
@@ -45,7 +56,7 @@
     (/ s (+ (* l1 ins-cost)
             (* l2 del-cost)))))
 
-(defn best-path [mat]
+(defn- best-path [mat]
   (let [[ml nl] (shape mat)
         m (dec ml) n (dec nl)]
 		(loop [x m, y n,
@@ -93,23 +104,26 @@
                :let ~let-forms]
          ~@body))))
 
-(defn get-cost [mat m n w x y] (mget mat x y))
+(defn- get-cost [mat m n w x y] (mget mat x y))
 
-(defn distance [s1 s2 doms]
+(defn- distance [s1 s2 doms]
   (let [m (count s1)
         n (count s2)
         mat (init-matrix (inc m) (inc n))]
     (when (or (== m 0) (== n 0))
-      (throw (IllegalArgumentException. (str "A sequence is empty:" s1 ".v." s2))))
+      (throw (IllegalArgumentException.
+							(str "A sequence is empty:" s1 ".v." s2))))
     (sc-for nx m ny n *warp-window*
             [px (dec nx)
              py (dec ny)
              i1 (get s1 px)
              i2 (get s2 py)]
             (let [i-dist-0 (ii/diss i1 i2 doms)
-                  i-dist (if (< i-dist-0 1.0) i-dist-0 Double/POSITIVE_INFINITY)
+                  i-dist (if (< i-dist-0 1.0)
+													 i-dist-0
+													 Double/POSITIVE_INFINITY)
                   ; del-cost/ins-cost are 0 at the edges.
-                  ; this is because prefixes are fine.
+                  ; this is because prefixes/postfixes are fine.
                   dc del-cost
                   ic ins-cost
                   best-dist (min
@@ -131,26 +145,8 @@
           [dist path] (distance t1 t2 doms)]
       (norm-score dist l1 l2))))
 
-(defn resample-path [path length]
-  (let [scale (/ (count path) length)]
-    (map (fn [l]
-           (let [i (* l scale)
-                 lo (max 0 (floor i))
-                 hi (min (dec (count path)) (ceil i))
-                 lo-v (nth (nth path lo) 2)
-                 hi-v (nth (nth path hi) 2)
-                 hi-wt (- 1 (- hi i))
-                 lo-wt (- 1 (- i lo))
-                 weighted-avg (/ (+ (* hi-wt hi-v) (* lo-wt lo-v)) 2)]
-             (when-not (== 2.0 (+ hi-wt lo-wt))
-               (println "uh oh" lo hi lo-wt hi-wt))
-             weighted-avg))
-         (range 0 length))))
-
-;;; gives a vector of distances of length |s1|.
-;;; this includes the parts of the path that are insertions
-;;; and matches, but not deletions, so this vector is "clocked"
-;;; to s1.
+;;; gives a vector of distances with a length L where
+;;; max{|s1|,|s2|} <= L <= |s1|+|s2|.
 (defn diss-t [s1 s2 doms]
   (let [t1 (:inputs s1)
         t2 (:inputs s2)
@@ -160,15 +156,8 @@
       (let [[dist path] (distance t1 t2 doms)
             len (count path)
             fwd-path path
-            ;fwd-path (resample-path path len)
-            ;fwd-path (map #(get % 2) (filter #(not (= (get % 3) :delete)) path))
             vct (new-vector :vectorz (count fwd-path))]
-;        (when-not (== (count fwd-path) len) (println "path " fwd-path " is " (count fwd-path) ", not " (inc len)))
-        ;(println (:label s1) (:label s2))
-        ;(println "P:" path)
-        ;(println "F:" fwd-path)
-        ;(println "VEC:" (assign vct (map #(get % 2) fwd-path)))
-        (assign vct (map #(get % 2) fwd-path))))))
+				(assign vct (map #(get % 2) fwd-path))))))
 
 ; Informal tests and usage examples.
 
@@ -209,7 +198,7 @@
 
 #_(tst-t 10)
 
-#_(let [vs [{:label :bc, :id "7bb331c9-0347-4704-8265-ec9d3264e750", :inputs [{:vals [:a], :det [:b], :player 1, :time 0} {:vals [:a], :det [:b], :player 1, :time 1} {:vals [:a], :det [:b], :player 1, :time 2} {:vals [:b], :det [:a], :player 1, :time 3} {:vals [:a], :det [:b], :player 1, :time 4} {:vals [:a], :det [:b], :player 1, :time 5} {:vals [:a], :det [:b], :player 1, :time 6} {:vals [:a], :det [:b], :player 1, :time 7} {:vals [:a], :det [:b], :player 1, :time 8} {:vals [:a], :det [:b], :player 1, :time 9}], :similar-count 34} {:label :ab, :id "5cc80077-4c4c-4c27-ab62-1410180f53ee", :inputs [{:vals [:a], :det [:b], :player 1, :time 0} {:vals [:a], :det [:a], :player 1, :time 1} {:vals [:a], :det [:a], :player 1, :time 2} {:vals [:a], :det [:a], :player 1, :time 3} {:vals [:a], :det [:a], :player 1, :time 4} {:vals [:a], :det [:a], :player 1, :time 5} {:vals [:a], :det [:b], :player 1, :time 6} {:vals [:a], :det [:a], :player 1, :time 7} {:vals [:a], :det [:b], :player 1, :time 8} {:vals [:a], :det [:a], :player 1, :time 9}], :similar-count 37}]
+#_(let [vs [{:label :bc, :id "7", :inputs [{:vals [:a], :det [:b], :player 1, :time 0} {:vals [:a], :det [:b], :player 1, :time 1} {:vals [:a], :det [:b], :player 1, :time 2} {:vals [:b], :det [:a], :player 1, :time 3} {:vals [:a], :det [:b], :player 1, :time 4} {:vals [:a], :det [:b], :player 1, :time 5} {:vals [:a], :det [:b], :player 1, :time 6} {:vals [:a], :det [:b], :player 1, :time 7} {:vals [:a], :det [:b], :player 1, :time 8} {:vals [:a], :det [:b], :player 1, :time 9}], :similar-count 34} {:label :ab, :id "5", :inputs [{:vals [:a], :det [:b], :player 1, :time 0} {:vals [:a], :det [:a], :player 1, :time 1} {:vals [:a], :det [:a], :player 1, :time 2} {:vals [:a], :det [:a], :player 1, :time 3} {:vals [:a], :det [:a], :player 1, :time 4} {:vals [:a], :det [:a], :player 1, :time 5} {:vals [:a], :det [:b], :player 1, :time 6} {:vals [:a], :det [:a], :player 1, :time 7} {:vals [:a], :det [:b], :player 1, :time 8} {:vals [:a], :det [:a], :player 1, :time 9}], :similar-count 37}]
       doms (gamalyzer.data.input/expand-domain** vs (gamalyzer.data.input/make-domains))
       vss (map :id vs)]
   (doall (for [a vs

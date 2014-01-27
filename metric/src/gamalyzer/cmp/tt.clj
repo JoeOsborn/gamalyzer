@@ -3,33 +3,47 @@
             [clojure.core.cache :as cache]
             [clojure.math.numeric-tower :refer [abs]]
             [clojure.math.combinatorics :refer [cartesian-product]]
-            [clojure.core.matrix :refer [new-array mget mset!
+            [clojure.core.matrix :refer [new-array
+																				 mget mset!
                                          dimension-count shape eseq]])
   (:import [java.lang Double])
   (:gen-class :name gamalyzer.cmp.tt
               :methods
-              [^{:static true} [diss [gamalyzer.data.input.Trace gamalyzer.data.input.Trace gamalyzer.data.input.Domains int] double]
-							 ^{:static true} [dissimilarities [gamalyzer.data.input.Trace gamalyzer.data.input.Trace gamalyzer.data.input.Domains int] doubles]]))
+              [^{:static true} [diss
+																[gamalyzer.data.input.Trace
+																 gamalyzer.data.input.Trace
+																 gamalyzer.data.input.Domains
+																 int]
+																double]
+							 ^{:static true} [dissimilarities
+																[gamalyzer.data.input.Trace
+																 gamalyzer.data.input.Trace
+																 gamalyzer.data.input.Domains
+																 int]
+																doubles]]))
 
-(defn diss-t [s1 s2 doms] (dist/diss-t s1 s2 doms))
+(defn diss-t [s1 s2 doms]
+	(dist/diss-t s1 s2 doms))
 
-(defn best-pivot-distance [mat pivots n]
+(defn- best-pivot-distance [mat pivots n]
   ; find among the |pivots| pivots in mat the lowest distance to trace #n
   (let [rng (range 0 (count pivots))
         distances (map #(mget mat % n (dec (dimension-count mat 2))) rng)
         min-distance (apply min distances)]
     min-distance))
 
-(defn not-a-pivot? [pivots t]
+(defn- not-a-pivot? [pivots t]
   (not-any? #(= % t) pivots))
 
-(defn maxmin-index [pivots mat traces]
+(defn- maxmin-index [pivots mat traces]
   (let [rng (range 0 (count traces))
         non-pivot-indices (filter #(not-a-pivot? pivots %) rng)
-        maxmin (apply max-key #(best-pivot-distance mat pivots %) non-pivot-indices)]
+        maxmin (apply max-key
+											#(best-pivot-distance mat pivots %)
+											non-pivot-indices)]
     maxmin))
 
-(defn select-pivot [pivots mat traces]
+(defn- select-pivot [pivots mat traces]
   (if (empty? pivots)
     (rand-int (count traces))
     ; find the non-pivot trace #n with the largest "best distance" to every pivot up to k
@@ -37,7 +51,7 @@
 
 ; fills a 2d submatrix at [pivot-index,0..|traces|,0..max-length] with the distances
 ; of each trace up to max-length.
-(defn calc-pivot-diffs! [mat pivot-index pivot traces doms]
+(defn- calc-pivot-diffs! [mat pivot-index pivot traces doms]
   (doseq [:let [max-length (dimension-count mat 2)]
           j (range 0 (count traces))
           :let [sample (nth traces j)
@@ -62,9 +76,13 @@
      [[] mat0]
      (range 0 k))))
 
-(defn -diss [a b doms w] (dist/with-warp-window w (dist/diss a b doms)))
+(defn -diss [a b doms w]
+	(dist/with-warp-window w
+												 (dist/diss a b doms)))
 (defn -dissimilarities [a b doms w]
-  (double-array (eseq (dist/with-warp-window (dist/diss-t a b doms)))))
+  (double-array (eseq
+								 (dist/with-warp-window w
+																				(dist/diss-t a b doms)))))
 
 ; Informal tests and usage examples.
 
