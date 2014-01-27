@@ -1,6 +1,8 @@
 (defproject gamalyzer-vis "0.2.0-SNAPSHOT"
   :description "Generic visualization of game play traces."
   :url "http://github.com/JoeOsborn/gamalyzer"
+	:license {:name "MIT License"
+						:url "http://mit-license.org"}
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/core.cache "0.6.3"]
                  [org.clojure/core.memoize "0.5.6"]
@@ -23,7 +25,9 @@
 ;  :jar-exclusions [#"(?:^|/).svn/"
 ;	                 #"traces/"]
 ;  :aot []
-  :repositories {"project" "file:../maven_repository"}
+  :repositories {"project" {:url "file:../maven_repository"
+														:username ""
+														:passphrase ""}}
   :plugins [[lein-ring "0.8.7"]
             [lein-cljsbuild "1.0.1"]]
   :source-paths ["srv"]

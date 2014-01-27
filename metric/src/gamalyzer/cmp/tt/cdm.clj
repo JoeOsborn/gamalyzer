@@ -37,7 +37,7 @@
         (cache/miss C k sz)
         sz))))
 
-(defn diss [s1 s2 doms]
+(defn distance [s1 s2 doms]
   (let [u1 (:id s1) t1 (:inputs s1)
         u2 (:id s2) t2 (:inputs s2)
         s1sz (compressed-size u1 t1)
@@ -60,5 +60,5 @@
                  (for [x (range 0 lim)
                        y (range (inc x) lim)
                        :let [t1 (nth vss x), t2 (nth vss y)]]
-                   [x y (double (diss t1 t2 doms))])))))
+                   [x y (double (distance t1 t2 doms))])))))
 #_(tst 5)

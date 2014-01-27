@@ -5,11 +5,14 @@
             [clojure.math.numeric-tower :refer [abs]]
             [clojure.test :refer [is]]))
 
-; takes game traces as input:
-; {:traces ts :doms doms}
-;   ts = {uuid {:id uuid :inputs is}}*
-;     is = [input*]
-;       input = (parts input) = [det vals]
+;;;; takes game traces as input:
+;;;; {:traces ts :doms doms}
+;;;;   ts = {uuid {:id uuid :inputs is}}*
+;;;;     is = [input*]
+;;;;       input = (parts input) = [det vals]
+
+;;;; Cleanup notes: Types might help here.
+;;;; Cleanup notes: Flattened inputs, custom weights, separate categorical/numeric data.
 
 (declare vs-diss)
 
@@ -64,28 +67,29 @@
    (and (not (sequential? vs1)) (not (sequential? vs2))) (vs-diss-prim vs1 vs2)
    true (throw (Exception. (str "Could not find distance between " (.toString vs1) " and " (.toString vs2))))))
 
-(defn diss ^double [i1 i2 doms]
+(defn distance ^double [i1 i2 doms]
   (let [[d1 vs1] (parts i1)
         [d2 vs2] (parts i2)]
-    (if-not (= d1 d2) 1.0
+    (if-not (= d1 d2)
+			1.0
       (* (vs-diss vs1 vs2 [] (get-domains doms d1)) 0.8))))
 
 ; Informal tests and usage examples.
 
-#_(is (= 0.0 (diss (make-input 1 0 :a [:a]) (make-input 0 0 :a [:a]) (make-domains))))
-#_(is (= 0.8 (diss (make-input 1 0 :a [:a]) (make-input 0 0 :a [:b]) (make-domains))))
-#_(is (= 1.0 (diss (make-input 1 0 :a [:a]) (make-input 0 0 :b [:a]) (make-domains))))
-#_(is (= 0.0 (diss (make-input 1 0 [:a :a] [:a]) (make-input 0 0 [:a :a] [:a]) (make-domains))))
-#_(is (= 1.0 (diss (make-input 1 0 [:a :a] [:a]) (make-input 0 0 [:a :b] [:a]) (make-domains))))
-#_(is (= 0.4 (diss (make-input 1 0 :a [:a :a]) (make-input 0 0 :a [:a :b]) (make-domains))))
-#_(is (< 0.26 (diss (make-input 1 0 :a '(a a)) (make-input 0 0 :a '(a b)) (make-domains)) 0.27))
-#_(is (< 0.53 (diss (make-input 1 0 :a '(a a)) (make-input 0 0 :a '(b a)) (make-domains)) 0.54))
-#_(is (= 0.0 (diss (make-input 1 0 :a [:a [:a]]) (make-input 0 0 :a [:a [:a]]) (make-domains))))
-#_(is (= 0.4 (diss (make-input 1 0 :a [:a [:a]]) (make-input 0 0 :a [:a [:b]]) (make-domains))))
-#_(is (= 0.0 (diss (make-input 1 0 :a [:a [:a :a]]) (make-input 0 0 :a [:a [:a :a]]) (make-domains))))
-#_(is (= 0.2 (diss (make-input 1 0 :a [:a [:a :a]]) (make-input 0 0 :a [:a [:a :b]]) (make-domains))))
+#_(is (= 0.0 (distance (make-input 1 0 :a [:a]) (make-input 0 0 :a [:a]) (make-domains))))
+#_(is (= 0.8 (distance (make-input 1 0 :a [:a]) (make-input 0 0 :a [:b]) (make-domains))))
+#_(is (= 1.0 (distance (make-input 1 0 :a [:a]) (make-input 0 0 :b [:a]) (make-domains))))
+#_(is (= 0.0 (distance (make-input 1 0 [:a :a] [:a]) (make-input 0 0 [:a :a] [:a]) (make-domains))))
+#_(is (= 1.0 (distance (make-input 1 0 [:a :a] [:a]) (make-input 0 0 [:a :b] [:a]) (make-domains))))
+#_(is (= 0.4 (distance (make-input 1 0 :a [:a :a]) (make-input 0 0 :a [:a :b]) (make-domains))))
+#_(is (< 0.26 (distance (make-input 1 0 :a '(a a)) (make-input 0 0 :a '(a b)) (make-domains)) 0.27))
+#_(is (< 0.53 (distance (make-input 1 0 :a '(a a)) (make-input 0 0 :a '(b a)) (make-domains)) 0.54))
+#_(is (= 0.0 (distance (make-input 1 0 :a [:a [:a]]) (make-input 0 0 :a [:a [:a]]) (make-domains))))
+#_(is (= 0.4 (distance (make-input 1 0 :a [:a [:a]]) (make-input 0 0 :a [:a [:b]]) (make-domains))))
+#_(is (= 0.0 (distance (make-input 1 0 :a [:a [:a :a]]) (make-input 0 0 :a [:a [:a :a]]) (make-domains))))
+#_(is (= 0.2 (distance (make-input 1 0 :a [:a [:a :a]]) (make-input 0 0 :a [:a [:a :b]]) (make-domains))))
 
-#_(is (< 0.13 (diss (make-input 1 0 :a [:a '(a a)]) (make-input 0 0 :a [:a '(a b)]) (make-domains)) 0.14))
+#_(is (< 0.13 (distance (make-input 1 0 :a [:a '(a a)]) (make-input 0 0 :a [:a '(a b)]) (make-domains)) 0.14))
 
 #_(let [ia1 (make-input 0 0 :a [1])
       ia2 (make-input 1 0 :a [2])
@@ -95,9 +99,9 @@
       ib3 (make-input 2 0 :b [10])
       ib4 (make-input 3 0 :b [1])
       ds (reduce #(expand-domain %2 %1) (make-domains) [ia1 ia2 ia3 ib1 ib2 ib3 ib4])]
-  (is (= 0.0 (diss ia1 ia1 ds)))
-  (is (= 0.4 (diss ia1 ia2 ds)))
-  (is (< 0.080 (diss ib1 ib4 ds) 0.081)))
+  (is (= 0.0 (distanceia1 ia1 ds)))
+  (is (= 0.4 (distanceia1 ia2 ds)))
+  (is (< 0.080 (distanceib1 ib4 ds) 0.081)))
 
 #_(let [i1 {:det (list [:play_card 2] (list :library 0) :keep),
           :vals (list [:p 2] [:p 2] :library)}
@@ -107,4 +111,4 @@
                                 7
                                 (hash-set :system :random)
                                 nil))]
-  (is (not (Double/isNaN (diss i1 i2 doms)))))
+  (is (not (Double/isNaN (distancei1 i2 doms)))))

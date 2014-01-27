@@ -9,21 +9,23 @@
   (:import [java.lang Double])
   (:gen-class :name gamalyzer.cmp.tt
               :methods
-              [^{:static true} [diss
+              [^{:static true} [distance
 																[gamalyzer.data.input.Trace
 																 gamalyzer.data.input.Trace
 																 gamalyzer.data.input.Domains
 																 int]
 																double]
-							 ^{:static true} [dissimilarities
+							 ^{:static true} [distances
 																[gamalyzer.data.input.Trace
 																 gamalyzer.data.input.Trace
 																 gamalyzer.data.input.Domains
 																 int]
 																doubles]]))
 
-(defn diss-t [s1 s2 doms]
-	(dist/diss-t s1 s2 doms))
+;;;; Cleanup notes: Types might help here.
+
+(defn distances [s1 s2 doms]
+	(dist/distances s1 s2 doms))
 
 (defn- best-pivot-distance [mat pivots n]
   ; find among the |pivots| pivots in mat the lowest distance to trace #n
@@ -46,16 +48,17 @@
 (defn- select-pivot [pivots mat traces]
   (if (empty? pivots)
     (rand-int (count traces))
-    ; find the non-pivot trace #n with the largest "best distance" to every pivot up to k
+    ; find the non-pivot trace #n with the largest "best distance" to every
+		; pivot up to k
     (maxmin-index pivots mat traces)))
 
-; fills a 2d submatrix at [pivot-index,0..|traces|,0..max-length] with the distances
-; of each trace up to max-length.
+;;; fills a 2d submatrix at [pivot-index,0..|traces|,0..max-length] with the
+;;; distances of each trace up to max-length.
 (defn- calc-pivot-diffs! [mat pivot-index pivot traces doms]
   (doseq [:let [max-length (dimension-count mat 2)]
           j (range 0 (count traces))
           :let [sample (nth traces j)
-                distances (diss-t pivot sample doms)
+                distances (distances pivot sample doms)
                 how-many (dimension-count distances 0)]
           d (range 0 max-length)
           :let [dist (if (< d how-many)
@@ -76,13 +79,13 @@
      [[] mat0]
      (range 0 k))))
 
-(defn -diss [a b doms w]
+(defn -distance [a b doms w]
 	(dist/with-warp-window w
-												 (dist/diss a b doms)))
-(defn -dissimilarities [a b doms w]
+												 (dist/distance a b doms)))
+(defn -distances [a b doms w]
   (double-array (eseq
 								 (dist/with-warp-window w
-																				(dist/diss-t a b doms)))))
+																				(dist/distances a b doms)))))
 
 ; Informal tests and usage examples.
 
@@ -97,7 +100,7 @@
 										 nil)
                vs (:traces logs)
                doms (:domains logs)
-               disss (-dissimilarities (first vs) (second vs) doms)]
+               disss (-distances (first vs) (second vs) doms)]
            disss))))
 #_(tst 10 10)
 #_(defn tst [n k]
