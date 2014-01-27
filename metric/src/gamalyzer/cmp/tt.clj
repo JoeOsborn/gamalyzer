@@ -3,14 +3,12 @@
             [clojure.core.cache :as cache]
             [clojure.math.numeric-tower :refer [abs]]
             [clojure.math.combinatorics :refer [cartesian-product]]
-            [gamalyzer.read.synth :refer [read-logs]]
             [clojure.core.matrix :refer [new-array mget mset! set-current-implementation
                                          dimension-count shape eseq]])
   (:import [java.lang Double])
   (:gen-class :name gamalyzer.cmp.tt
               :methods
-              [^{:static true} [stringify [gamalyzer.data.input.Trace] String]
-							 ^{:static true} [diss [gamalyzer.data.input.Trace gamalyzer.data.input.Trace gamalyzer.data.input.Domains int] double]
+              [^{:static true} [diss [gamalyzer.data.input.Trace gamalyzer.data.input.Trace gamalyzer.data.input.Domains int] double]
 							 ^{:static true} [dissimilarities [gamalyzer.data.input.Trace gamalyzer.data.input.Trace gamalyzer.data.input.Domains int] doubles]]))
 
 (set-current-implementation :vectorz)
@@ -65,26 +63,21 @@
      [[] mat0]
      (range 0 k))))
 
-(defn mappify [t]
-  (cond
-   (map? t) (into (hash-map) (map (fn [[k v]]
-                                    [(mappify k) (mappify v)]) t))
-   (coll? t) (map mappify t)
-   true t))
-
-(defn -stringify [a] (str (mappify a)))
 (defn -diss [a b doms w] (dist/with-warp-window w (dist/diss a b doms)))
 (defn -dissimilarities [a b doms w]
   (double-array (eseq (dist/with-warp-window (dist/diss-t a b doms)))))
 
+; Informal tests and usage examples.
+
 #_(defn tst [n k]
   (time (doall
          (let [dur 43
-               logs (read-logs [[:a (/ n 3) dur {[1 [:a] [:a]] 1.0}]
-                                [:b (/ n 3) dur {[1 [:b] [:a]] 1.0}]
-                                [:c (/ n 3) dur {[1 [:a] [:b]] 1.0}]]
-                               (hash-set :system :random)
-                               nil)
+							 logs (gamalyzer.read.synth/sample-data
+										 [[:a (/ n 3) dur {[1 [:a] [:a]] 1.0}]
+											[:b (/ n 3) dur {[1 [:b] [:a]] 1.0}]
+											[:c (/ n 3) dur {[1 [:a] [:b]] 1.0}]]
+										 (hash-set :system :random)
+										 nil)
                vs (:traces logs)
                doms (:domains logs)
                disss (-dissimilarities (first vs) (second vs) doms)]
@@ -93,11 +86,12 @@
 #_(defn tst [n k]
   (time (doall
          (let [dur 43
-               logs (read-logs [[:a (/ n 3) dur {[1 [:a] [:a]] 1.0}]
-                                [:b (/ n 3) dur {[1 [:b] [:a]] 1.0}]
-                                [:c (/ n 3) dur {[1 [:a] [:b]] 1.0}]]
-                               (hash-set :system :random)
-                               nil)
+               logs (gamalyzer.read.synth/sample-data
+										 [[:a (/ n 3) dur {[1 [:a] [:a]] 1.0}]
+											[:b (/ n 3) dur {[1 [:b] [:a]] 1.0}]
+											[:c (/ n 3) dur {[1 [:a] [:b]] 1.0}]]
+										 (hash-set :system :random)
+										 nil)
                vs (:traces logs)
                doms (:domains logs)
                [pivots mat] (pivot-distances k vs doms)]
@@ -105,6 +99,6 @@
 
 #_(tst 10 10)
 
-#_(let [traces [{:similar-count 53, :id "d73114ff-a682-4709-ba0a-f0f061e2f74f", :inputs [{:time 0, :player 1, :det [:a], :vals [:a]} {:time 1, :player 1, :det [:a], :vals [:a]} {:time 2, :player 1, :det [:a], :vals [:a]} {:time 3, :player 1, :det [:b], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:a]}], :label :ab} {:similar-count 33, :id "57e06a91-a650-4532-92d7-b19dae4d096e", :inputs [{:time 0, :player 1, :det [:b], :vals [:a]} {:time 1, :player 1, :det [:b], :vals [:a]} {:time 2, :player 1, :det [:b], :vals [:a]} {:time 3, :player 1, :det [:b], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:b]}], :label :bc} {:similar-count 16, :id "189b789c-78a3-4934-a1ac-da2fa5c5ccd8", :inputs [{:time 0, :player 1, :det [:a], :vals [:b]} {:time 1, :player 1, :det [:a], :vals [:b]} {:time 2, :player 1, :det [:a], :vals [:b]} {:time 3, :player 1, :det [:a], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:a]}], :label :ac}]
+#_(let [traces [{:similar-count 53, :id "d", :inputs [{:time 0, :player 1, :det [:a], :vals [:a]} {:time 1, :player 1, :det [:a], :vals [:a]} {:time 2, :player 1, :det [:a], :vals [:a]} {:time 3, :player 1, :det [:b], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:a]}], :label :ab} {:similar-count 33, :id "5", :inputs [{:time 0, :player 1, :det [:b], :vals [:a]} {:time 1, :player 1, :det [:b], :vals [:a]} {:time 2, :player 1, :det [:b], :vals [:a]} {:time 3, :player 1, :det [:b], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:b]}], :label :bc} {:similar-count 16, :id "1", :inputs [{:time 0, :player 1, :det [:a], :vals [:b]} {:time 1, :player 1, :det [:a], :vals [:b]} {:time 2, :player 1, :det [:a], :vals [:b]} {:time 3, :player 1, :det [:a], :vals [:a]} {:time 4, :player 1, :det [:a], :vals [:a]}], :label :ac}]
       [pivots pivot-mat] (pivot-distances 3 traces (gamalyzer.data.input/expand-domain** traces (gamalyzer.data.input/make-domains)))]
   (map clojure.core.matrix/to-nested-vectors (clojure.core.matrix/slices pivot-mat 2)))

@@ -64,6 +64,8 @@
 (defn expand-domain** [traces doms]
   (reduce #(expand-domain* (:inputs %2) %1) doms (vec traces)))
 
+; Informal tests and usage examples.
+
 ;(expand-domain (make-input 0 0 :a '(1)) (make-domains))
 ;(expand-domain (make-input 0 0 :a '((1))) (make-domains))
 ;(expand-domain (make-input 0 0 :a '((1) :a (2))) (make-domains))

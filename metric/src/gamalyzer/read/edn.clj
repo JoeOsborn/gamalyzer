@@ -1,10 +1,11 @@
 (ns gamalyzer.read.edn
   (:require [clojure.edn :as edn]
             [multiset.core :as ms]
-            [gamalyzer.data.input :refer [make-input make-domains make-traces make-trace expand-domain player]])
+						[clojure.java.io :refer [file]]
+						[gamalyzer.data.input :refer [make-input make-domains make-traces make-trace expand-domain player]])
   (:import (java.io PushbackReader FileReader)))
 
-(defn open-log [path blacklist]
+(defn- open-log [path blacklist]
   (let [file (FileReader. path)
         pb (PushbackReader. file)
         props (edn/read pb)]
@@ -16,7 +17,7 @@
         (.close file)
         (throw (Exception. "no log properties"))))))
 
-(defn close-log [h]
+(defn- close-log [h]
   (.close (:file h))
   nil)
 
@@ -40,7 +41,7 @@
         v (concat inputs (list player) args)]
     [t player k v]))
 
-(defn read-log-trace [h domains]
+(defn- read-log-trace [h domains]
   (if-let [start (read-log-entry h)]
     (let [fs (first start)
           ss (second start)
@@ -78,12 +79,15 @@
     nil))
 
 (defn read-logs
-  ([path]
-   (read-logs path :all))
-  ([path how-many]
-   (read-logs path how-many (hash-set)))
-  ([path how-many blacklist]
-   (read-logs path how-many blacklist nil))
+	([paths blacklist indoms]
+	 (reduce (fn [{traces :traces
+								 doms :domains} file]
+						 (let [{new-traces :traces
+										new-doms :domains}
+									 (read-logs file :all blacklist doms)]
+							 (make-traces (into traces new-traces) new-doms)))
+					 (make-traces [] (or indoms (make-domains)))
+					 paths))
   ([path how-many blacklist indoms]
    (let [log (open-log path blacklist)
          domains (if (nil? indoms) (make-domains) indoms)]
@@ -103,4 +107,15 @@
            (close-log log)
            (make-traces (persistent! ts) doms)))))))
 
-#_(:traces (time (read-logs "/Users/jcosborn/Projects/gamalyzer/resources/traces/refraction/refraction.5.i.trace" 1 (hash-set) nil)))
+(defn sample-data
+  ([] (sample-data nil))
+  ([lev]
+   (let [files (filter #(.endsWith (.getName %)
+                                   (str (if (nil? lev) "" (str "_" lev)) ".trace"))
+                       (file-seq (file "resources/traces/")))]
+		 (read-logs files #{} nil))))
+
+
+; Informal tests and usage examples.
+
+#_(:traces (time (read-logs "/Users/jcosborn/Projects/gamalyzer/vis/resources/traces/refraction/refraction.5.i.trace" 1 (hash-set) nil)))

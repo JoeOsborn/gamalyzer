@@ -10,11 +10,9 @@
                  [org.clojure/math.numeric-tower "0.0.2"]
                  [net.mikera/vectorz-clj "0.17.0"]
                  [net.mikera/core.matrix "0.15.0"]
-                 [net.mikera/core.matrix.stats "0.3.0"]
-                 [apporiented.com/hierarchical-clustering "1.0"]
                  [clojure-csv/clojure-csv "2.0.1"]]
 ;  :jar-exclusions [#"(?:^|/).svn/"]
-  :aot [gamalyzer.data.input gamalyzer.data.input.util gamalyzer.read.mario gamalyzer.cmp.tt]
+  :aot [gamalyzer.data.input gamalyzer.data.util gamalyzer.read.mario gamalyzer.cmp.tt]
   :repositories {"project" "file:../maven_repository"}
   :plugins []
   :source-paths ["src"])

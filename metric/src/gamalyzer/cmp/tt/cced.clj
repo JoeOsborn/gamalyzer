@@ -3,7 +3,6 @@
             [clojure.core.cache :as cache]
             [clojure.math.numeric-tower :refer [abs ceil floor]]
             [clojure.math.combinatorics :refer [cartesian-product]]
-            [gamalyzer.read.synth :refer [read-logs]]
             [clojure.core.matrix :refer [new-matrix mget mset! fill fill! assign shape
                                          new-vector
                                          set-current-implementation]])
@@ -173,28 +172,17 @@
         ;(println "VEC:" (assign vct (map #(get % 2) fwd-path)))
         (assign vct (map #(get % 2) fwd-path))))))
 
-#_(let [logs (gamalyzer.read.mario/sample-data)
-      vs (:traces logs)
-      doms (:domains logs)
-      maria (first (filter #(.startsWith (:id %) "replay_MariaJesus_") vs))
-      emil (first (filter #(.startsWith (:id %) "replay_Emil_") vs))
-      keith (first (filter #(.startsWith (:id %) "replay_Keith_") vs))
-      bb (ii/diss (second (:inputs maria)) (second (:inputs emil)) doms)]
-  [; (map :vals (:inputs maria))
-   ; (map :vals (:inputs emil))
-   (:vals (second (:inputs maria))) (:vals (second (:inputs emil)))
-   bb
-   (diss-t maria emil doms)
-   (diss-t maria keith doms)])
+; Informal tests and usage examples.
 
 #_(defn tst [lim]
   (time (doall
          (let [dur 25
-               logs (read-logs [[:a (/ lim 3) dur {[1 [:a] [:a]] 1.0}]
-                                [:b (/ lim 3) dur {[1 [:b] [:a]] 1.0}]
-                                [:c (/ lim 3) dur {[1 [:a] [:b]] 1.0}]]
-                               (hash-set :system :random)
-                               nil)
+               logs (gamalyzer.read.synth/sample-data
+										 [[:a (/ lim 3) dur {[1 [:a] [:a]] 1.0}]
+											[:b (/ lim 3) dur {[1 [:b] [:a]] 1.0}]
+											[:c (/ lim 3) dur {[1 [:a] [:b]] 1.0}]]
+										 (hash-set :system :random)
+										 nil)
                vs (:traces logs)
                doms (:domains logs)]
            (for [x (range 0 lim)
@@ -207,12 +195,13 @@
 #_(defn tst-t [lim]
   (time (doall
          (let [dur 40
-               logs (read-logs [[:a (/ lim 4) dur {[1 [:a] [:a]] 1.0}]
-                                [:b (/ lim 4) (+ dur 15) {[1 [:b] [:a]] 1.0}]
-                                [:c (/ lim 4) dur {[1 [:a] [:b]] 1.0}]
-                                [:d (/ lim 4) dur {[1 [:a] [:a]] 0.5 [1 [:b] [:a]] 0.5}]]
-                               (hash-set :system :random)
-                               nil)
+               logs (gamalyzer.read.synth/sample-data
+										 [[:a (/ lim 4) dur {[1 [:a] [:a]] 1.0}]
+											[:b (/ lim 4) (+ dur 15) {[1 [:b] [:a]] 1.0}]
+											[:c (/ lim 4) dur {[1 [:a] [:b]] 1.0}]
+											[:d (/ lim 4) dur {[1 [:a] [:a]] 0.5 [1 [:b] [:a]] 0.5}]]
+										 (hash-set :system :random)
+										 nil)
                vs (:traces logs)
                doms (:domains logs)]
            (for [x (range 0 lim)
@@ -228,9 +217,3 @@
   (doall (for [a vs
                b vs]
            (diss-t a b doms))))
-
-#_(let [a {:id :synthetic, :inputs (list {:time 0, :player :mario, :det (list :move), :vals (list 0 0 0 0)} {:time 1, :player :mario, :det (list :move), :vals (list 0 0 0 0)} {:time 2, :player :mario, :det (list :move), :vals (list 0 0 0 0)} {:time 3, :player :mario, :det (list :move), :vals (list 0 0 0 0)} {:time 4, :player :mario, :det (list :move), :vals (list 0 0 0 0)} {:time 5, :player :mario, :det (list :move), :vals (list 0 0 0 0)})}
-
-      b {:id "human-ld1-lvl1.act", :inputs (list {:time 0, :player :mario, :det (list :move), :vals (list 0 0 0 1)} {:time 1, :player :mario, :det (list :move), :vals (list 0 2 0 0)} {:time 2, :player :mario, :det (list :move), :vals (list 3 1 0 0)} {:time 3, :player :mario, :det (list :move), :vals (list 6 0 0 0)} {:time 4, :player :mario, :det (list :move), :vals (list 6 3 0 3)} {:time 5, :player :mario, :det (list :move), :vals (list 6 0 0 2)} {:time 6, :player :mario, :det (list :move), :vals (list 4 0 0 3)} {:time 7, :player :mario, :det (list :move), :vals (list 1 2 0 0)} {:time 8, :player :mario, :det (list :move), :vals (list 4 1 0 2)} {:time 9, :player :mario, :det (list :move), :vals (list 6 0 0 5)} {:time 10, :player :mario, :det (list :move), :vals (list 3 1 0 1)} {:time 11, :player :mario, :det (list :move), :vals (list 6 0 0 4)} {:time 12, :player :mario, :det (list :move), :vals (list 3 1 0 2)} {:time 13, :player :mario, :det (list :move), :vals (list 1 1 0 1)} {:time 14, :player :mario, :det (list :move), :vals (list 3 2 0 0)} {:time 15, :player :mario, :det (list :move), :vals (list 2 0 0 4)} {:time 16, :player :mario, :det (list :move), :vals (list 0 0 0 2)} {:time 17, :player :mario, :det (list :move), :vals (list 3 0 0 2)} {:time 18, :player :mario, :det (list :move), :vals (list 1 0 0 2)} {:time 19, :player :mario, :det (list :move), :vals (list 2 0 0 3)} {:time 20, :player :mario, :det (list :move), :vals (list 5 0 0 3)} {:time 21, :player :mario, :det (list :move), :vals (list 0 2 0 0)} {:time 22, :player :mario, :det (list :move), :vals (list 1 2 0 0)} {:time 23, :player :mario, :det (list :move), :vals (list 6 0 0 0)} {:time 24, :player :mario, :det (list :move), :vals (list 3 1 0 2)} {:time 25, :player :mario, :det (list :move), :vals (list 1 2 0 0)} {:time 26, :player :mario, :det (list :move), :vals (list 3 2 0 0)} {:time 27, :player :mario, :det (list :move), :vals (list 1 2 0 0)} {:time 28, :player :mario, :det (list :move), :vals (list 1 3 0 0)} {:time 29, :player :mario, :det (list :move), :vals (list 2 2 0 0)} {:time 30, :player :mario, :det (list :move), :vals (list 0 2 0 0)} {:time 31, :player :mario, :det (list :move), :vals (list 2 1 0 0)} {:time 32, :player :mario, :det (list :move), :vals (list 4 1 0 2)} {:time 33, :player :mario, :det (list :move), :vals (list 1 3 0 0)} {:time 34, :player :mario, :det (list :move), :vals (list 4 2 0 0)} {:time 35, :player :mario, :det (list :move), :vals (list 4 4 0 0)} {:time 36, :player :mario, :det (list :move), :vals (list 5 1 0 3)} {:time 37, :player :mario, :det (list :move), :vals (list 1 0 0 1)} {:time 38, :player :mario, :det (list :move), :vals (list 0 1 0 1)} {:time 39, :player :mario, :det (list :move), :vals (list 0 2 0 0)} {:time 40, :player :mario, :det (list :move), :vals (list 5 1 0 2)} {:time 41, :player :mario, :det (list :move), :vals (list 4 2 0 3)} {:time 42, :player :mario, :det (list :move), :vals (list 2 1 0 2)} {:time 43, :player :mario, :det (list :move), :vals (list 3 0 0 2)} {:time 44, :player :mario, :det (list :move), :vals (list 5 0 0 5)} {:time 45, :player :mario, :det (list :move), :vals (list 2 1 0 0)} {:time 46, :player :mario, :det (list :move), :vals (list 6 2 0 2)} {:time 47, :player :mario, :det (list :move), :vals (list 0 3 0 2)} {:time 48, :player :mario, :det (list :move), :vals (list 0 2 0 0)} {:time 49, :player :mario, :det (list :move), :vals (list 3 0 0 0)} {:time 50, :player :mario, :det (list :move), :vals (list 1 3 0 0)} {:time 51, :player :mario, :det (list :move), :vals (list 2 1 0 0)} {:time 52, :player :mario, :det (list :move), :vals (list 6 0 0 1)} {:time 53, :player :mario, :det (list :move), :vals (list 0 1 0 1)} {:time 54, :player :mario, :det (list :move), :vals (list 1 1 0 2)} {:time 55, :player :mario, :det (list :move), :vals (list 0 0 0 2)} {:time 56, :player :mario, :det (list :move), :vals (list 0 0 0 2)} {:time 57, :player :mario, :det (list :move), :vals (list 0 0 0 3)} {:time 58, :player :mario, :det (list :move), :vals (list 0 0 0 1)} {:time 59, :player :mario, :det (list :move), :vals (list 3 0 0 3)} {:time 60, :player :mario, :det (list :move), :vals (list 1 1 0 0)} {:time 61, :player :mario, :det (list :move), :vals (list 0 2 0 0)} {:time 62, :player :mario, :det (list :move), :vals (list 1 0 0 0)} {:time 63, :player :mario, :det (list :move), :vals (list 2 1 0 1)} {:time 64, :player :mario, :det (list :move), :vals (list 3 0 0 3)} {:time 65, :player :mario, :det (list :move), :vals (list 2 0 0 2)} {:time 66, :player :mario, :det (list :move), :vals (list 0 0 0 5)} {:time 67, :player :mario, :det (list :move), :vals (list 3 0 0 2)} {:time 68, :player :mario, :det (list :move), :vals (list 0 0 0 2)} {:time 69, :player :mario, :det (list :move), :vals (list 0 0 0 4)} {:time 70, :player :mario, :det (list :move), :vals (list 2 0 0 0)} {:time 71, :player :mario, :det (list :move), :vals (list 2 0 0 3)} {:time 72, :player :mario, :det (list :move), :vals (list 1 0 0 3)} {:time 73, :player :mario, :det (list :move), :vals (list 3 0 0 1)} {:time 74, :player :mario, :det (list :move), :vals (list 6 0 0 6)} {:time 75, :player :mario, :det (list :move), :vals (list 1 0 0 2)} {:time 76, :player :mario, :det (list :move), :vals (list 1 0 0 0)} {:time 77, :player :mario, :det (list :move), :vals (list 1 0 0 4)} {:time 78, :player :mario, :det (list :move), :vals (list 2 0 0 2)} {:time 79, :player :mario, :det (list :move), :vals (list 0 0 0 2)} {:time 80, :player :mario, :det (list :move), :vals (list 1 0 0 2)} {:time 81, :player :mario, :det (list :move), :vals (list 2 1 0 3)} {:time 82, :player :mario, :det (list :move), :vals (list 0 3 0 0)} {:time 83, :player :mario, :det (list :move), :vals (list 4 1 0 0)} {:time 84, :player :mario, :det (list :move), :vals (list 4 1 0 3)} {:time 85, :player :mario, :det (list :move), :vals (list 4 3 0 1)} {:time 86, :player :mario, :det (list :move), :vals (list 1 1 0 3)} {:time 87, :player :mario, :det (list :move), :vals (list 1 0 0 3)} {:time 88, :player :mario, :det (list :move), :vals (list 1 2 0 0)} {:time 89, :player :mario, :det (list :move), :vals (list 5 2 0 2)} {:time 90, :player :mario, :det (list :move), :vals (list 1 2 0 1)} {:time 91, :player :mario, :det (list :move), :vals (list 4 1 0 3)} {:time 92, :player :mario, :det (list :move), :vals (list 4 0 0 2)} {:time 93, :player :mario, :det (list :move), :vals (list 2 0 0 1)} {:time 94, :player :mario, :det (list :move), :vals (list 2 0 0 1)} {:time 95, :player :mario, :det (list :move), :vals (list 1 2 0 0)} {:time 96, :player :mario, :det (list :move), :vals (list 6 1 0 4)} {:time 97, :player :mario, :det (list :move), :vals (list 2 2 0 1)} {:time 98, :player :mario, :det (list :move), :vals (list 1 0 0 1)} {:time 99, :player :mario, :det (list :move), :vals (list 1 0 0 1)} {:time 100, :player :mario, :det (list :move), :vals (list 2 2 0 2)} {:time 101, :player :mario, :det (list :move), :vals (list 2 0 0 1)} {:time 102, :player :mario, :det (list :move), :vals (list 5 0 0 4)} {:time 103, :player :mario, :det (list :move), :vals (list 2 3 0 1)} {:time 104, :player :mario, :det (list :move), :vals (list 3 2 0 0)} {:time 105, :player :mario, :det (list :move), :vals (list 2 3 0 0)} {:time 106, :player :mario, :det (list :move), :vals (list 6 0 0 4)} {:time 107, :player :mario, :det (list :move), :vals (list 5 1 0 0)} {:time 108, :player :mario, :det (list :move), :vals (list 2 2 0 0)} {:time 109, :player :mario, :det (list :move), :vals (list 4 1 0 3)} {:time 110, :player :mario, :det (list :move), :vals (list 2 3 0 1)} {:time 111, :player :mario, :det (list :move), :vals (list 6 0 0 4)} {:time 112, :player :mario, :det (list :move), :vals (list 3 1 0 1)} {:time 113, :player :mario, :det (list :move), :vals (list 1 2 0 0)} {:time 114, :player :mario, :det (list :move), :vals (list 6 0 0 0)} {:time 115, :player :mario, :det (list :move), :vals (list 6 0 0 2)} {:time 116, :player :mario, :det (list :move), :vals (list 1 0 0 0)})}
-      doms (gamalyzer.data.input/expand-domain** [a b] (gamalyzer.data.input/make-domains))]
-  (with-warp-window 20 (diss-t a b doms)))

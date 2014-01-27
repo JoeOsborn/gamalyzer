@@ -29,12 +29,16 @@
            (synth-trace k uuid how-long-here model)))
        (range 0 how-many)))
 
-(defn read-logs [models _blacklist domains]
-  (let [vs (vec (mapcat #(apply synth-traces %) models))
-        doms (expand-domain** vs (if (nil? domains) (make-domains) domains))]
-    (make-traces vs doms)))
+(defn sample-data
+	([models] (sample-data models #{} (make-domains)))
+	([models _blacklist domains]
+	 (let [vs (vec (mapcat #(apply synth-traces %) models))
+				 doms (expand-domain** vs (if (nil? domains) (make-domains) domains))]
+		 (make-traces vs doms))))
 
-(read-logs [[:a 1 2 {[1 [:a] [:a]] 1.0}]
+; Informal tests and usage examples.
+
+#_(sample-data [[:a 1 2 {[1 [:a] [:a]] 1.0}]
             [:b 1 2 {[1 [:b] [:a]] 1.0}]
             [:c 1 2 {[1 [:a] [:b]] 1.0}]]
            (hash-set :system :random)

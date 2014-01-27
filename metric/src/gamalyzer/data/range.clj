@@ -26,6 +26,8 @@
 
 (defn rrange [r] (- (:high r) (:low r)))
 
+; Informal tests and usage examples.
+
 ;(make-range 1)
 ;(range? (make-range 1))
 ;(expand-range (make-range 1) 1)

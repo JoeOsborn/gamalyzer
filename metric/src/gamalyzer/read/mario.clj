@@ -8,13 +8,6 @@
               [^{:static true} [readLogs ["[Ljava.io.File;"] gamalyzer.data.input.Traces]
                ^{:static true} [readActions [gamalyzer.data.input.Traces bytes] gamalyzer.data.input.Traces]]))
 
-(defn mappify [t]
-  (cond
-   (map? t) (into (hash-map) (map (fn [[k v]]
-                                    [(mappify k) (mappify v)]) t))
-   (coll? t) (map mappify t)
-   true t))
-
 (defn byte->bits [i]
   (reverse (map #(bit-test i %) (range 0 8))))
 
@@ -96,57 +89,48 @@
   (filter #(.endsWith (.getName %) suffix)
           (file-seq (file path))))
 
-(defn read-logs [path how-many blacklist indoms]
-  (let [act-files (find-files path ".act")
-        csv-files (find-files path ".csv")
-        files (concat act-files csv-files)
-        domains (if (nil? indoms) (make-domains) indoms)
-        limit (min (count files) (if (= how-many :all)
-                                   (count files)
-                                   how-many))]
-    (loop [ts (transient (vector))
-           i 0
-           doms domains]
-      (if (< i limit)
-        (if-let [{[trace] :traces new-doms :domains}
-                 (read-log-trace (nth files i)
-                                 blacklist
-                                 doms)]
-          (recur
-           (conj! ts trace)
-           (inc i)
-           new-doms)
-          (make-traces (persistent! ts) doms))
-        (make-traces (persistent! ts) doms)))))
+(defn read-logs
+	([paths blacklist indoms]
+	 (reduce (fn [{traces :traces
+								 doms :domains} file]
+						 (let [{[trace] :traces
+										new-doms :domains}
+									 (read-logs file :all blacklist doms)]
+							 (make-traces (conj traces trace) new-doms)))
+					 (make-traces [] (or indoms (make-domains)))
+					 paths))
+	([path how-many blacklist indoms]
+	 (let [act-files (find-files path ".act")
+				 csv-files (find-files path ".csv")
+				 files (concat act-files csv-files)
+				 domains (if (nil? indoms) (make-domains) indoms)
+				 limit (min (count files) (if (= how-many :all)
+																		(count files)
+																		how-many))]
+		 (loop [ts (transient (vector))
+						i 0
+						doms domains]
+			 (if (< i limit)
+				 (if-let [{[trace] :traces new-doms :domains}
+									(read-log-trace (nth files i)
+																	blacklist
+																	doms)]
+					 (recur
+						(conj! ts trace)
+						(inc i)
+						new-doms)
+					 (make-traces (persistent! ts) doms))
+				 (make-traces (persistent! ts) doms))))))
 
 (defn sample-data
   ([] (sample-data 0))
   ([lev]
    (let [files (filter #(.endsWith (.getName %)
                                    (str "_" lev ".csv"))
-                       (file-seq (file "resources/traces/ortega_shaker/")))
-         traces-and-domains
-         (reduce (fn [{traces :traces
-                       doms :domains} file]
-                   (let [{[trace] :traces
-                          new-doms :domains}
-                         (read-log-trace file (hash-set) doms)]
-                     (make-traces (conj traces trace) new-doms)))
-                 (make-traces [] (make-domains))
-                 files)]
-     traces-and-domains)))
+                       (file-seq (file "resources/traces/ortega_shaker/")))]
+		 (read-logs files #{} nil))))
 
-#_(time (sample-data))
-
-(defn -readLogs [files]
-  (reduce (fn [{traces :traces
-                doms :domains} file]
-            (let [{[trace] :traces
-                   new-doms :domains}
-                  (read-log-trace file (hash-set) doms)]
-              (make-traces (conj traces trace) new-doms)))
-          (make-traces [] (make-domains))
-          files))
+(defn -readLogs [files] (read-logs files #{} nil))
 
 (defn replace-last [s elt] (conj (butlast s) elt))
 
@@ -165,10 +149,12 @@
         new-doms (expand-domain* inputs doms)]
     (make-traces [(make-trace :synthetic inputs)] new-doms)))
 
+; Informal tests and usage examples.
+
 #_(with-open [in (input-stream "/Users/jcosborn/Projects/gamalyzer/resources/traces/mario/lazy-forward/actions.act")]
   (let [{ts :traces doms :domains} (read-log-trace "/Users/jcosborn/Projects/gamalyzer/resources/traces/mario/lazy-cig-sergeykarakovskiy/actions.act" #{} (make-domains))
         bcount (.available in)
         the-bytes (byte-array bcount)
         _ (.read in the-bytes)
         nts (-readActions (make-traces ts doms) the-bytes)]
-    (println (mappify nts))))
+    (println (gamalyzer.data.util/mappify nts))))

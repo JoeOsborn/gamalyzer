@@ -12,7 +12,7 @@
 
 (strokes/bootstrap)
 
-(def mode :mario)
+(def mode :edn)
 
 (def width 400)
 (def height 400)
@@ -20,7 +20,7 @@
 (def y (.. (d3.scale.linear) (domain [0 1]) (range [(- height 10) 10])))
 (defn y->t [v] (max 0 (.round js/Math (.invert y v))))
 
-(def level (mode {:mario 0 :refraction 5 :synthetic 0}))
+(def level (mode {:synthetic 0 :edn nil})) ; :mario 0 :refraction 5}))
 (def pivot-count 10)
 (def warp-window 20)
 (def fetched-data nil)
@@ -28,20 +28,21 @@
 (declare kick!)
 
 (defn reload-data! []
-  (strokes/fetch-edn (str (name mode) "?level=" level "&k=" pivot-count "&window=" warp-window)
+  (strokes/fetch-edn (str (name mode) "?k=" pivot-count "&window=" warp-window (if level (str "&level=" level) ""))
                      (fn [err root]
                        (log "load" err root)
                        (set! fetched-data root)
                        (kick! fetched-data))))
 
-(make-slider! "level"
-              (mode {:mario 0 :refraction 3 :synthetic 0})
-              level
-              (mode {:mario 39 :refraction 5 :synthetic 4})
-              1
-              (fn [n]
-                (set! level n)
-                (reload-data!)))
+(if-not (= mode :edn)
+	(make-slider! "level"
+								(mode {:synthetic 0}) ; :mario 0 :refraction 3})
+								level
+								(mode {:synthetic 3}) ; :mario 39 :refraction 5})
+								1
+								(fn [n]
+									(set! level n)
+									(reload-data!))))
 (make-slider! "pivot-count" 0 pivot-count 20 1
               (fn [n]
                 (set! pivot-count n)

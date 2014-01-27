@@ -55,7 +55,7 @@
 
 (defn- vs-diss-prim ^double [v1 v2] (if (= v1 v2) 0.0 1.0))
 
-(defn vs-diss ^double [vs1 vs2 path doms]
+(defn- vs-diss ^double [vs1 vs2 path doms]
   (cond
    (= vs1 vs2) 0.0
    (and (vector? vs1) (vector? vs2)) (vs-diss-vecs vs1 vs2 path doms)
@@ -70,17 +70,7 @@
     (if-not (= d1 d2) 1.0
       (* (vs-diss vs1 vs2 [] (get-domains doms d1)) 0.8))))
 
-#_(let [logs (gamalyzer.read.mario/sample-data)
-      vs (:traces logs)
-      doms (:domains logs)
-      maria (get vs "replay_MariaJesus_38")
-      emil (get vs "replay_Emil_38")]
-  [(:vals (second (:inputs maria)))
-   (:vals (second (:inputs emil)))
-   (vs-diss (:vals (second (:inputs maria))) (:vals (second (:inputs emil)))
-            []
-            (get-domains doms [:move]))])
-
+; Informal tests and usage examples.
 
 #_(is (= 0.0 (diss (make-input 1 0 :a [:a]) (make-input 0 0 :a [:a]) (make-domains))))
 #_(is (= 0.8 (diss (make-input 1 0 :a [:a]) (make-input 0 0 :a [:b]) (make-domains))))

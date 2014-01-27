@@ -48,6 +48,8 @@
         ucd-denom (max s1sz s2sz)]
     (/ ucd-num ucd-denom)))
 
+; Informal tests and usage examples.
+
 #_(defn tst [lim]
   (time (doall (let [logs (read-logs "/Users/jcosborn/Projects/game/xsb/logs/log.i.trace"
                                      lim

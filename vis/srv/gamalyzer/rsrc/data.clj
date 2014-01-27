@@ -1,10 +1,11 @@
 (ns gamalyzer.rsrc.data
   (:require [compojure.core :refer :all]
 						[liberator.core :refer [resource defresource]]
-            [gamalyzer.read.edn :refer [read-logs]]
-            [gamalyzer.read.mario :refer [sample-data]]
+            [gamalyzer.read.edn :as edn]
+						[gamalyzer.read.synth :as synth]
             [gamalyzer.cmp.tt :refer [pivot-distances]]
             [gamalyzer.cmp.tt.cced :refer [with-warp-window]]
+						[gamalyzer.data.util :refer [mappify]]
             [clojure.core.matrix :refer [set-current-implementation mutable
                                          slices to-nested-vectors new-array
                                          mget mset! shape square dimension-count
@@ -91,17 +92,12 @@
                                            [1 [:a] [:a :b]] 0.0
                                            [1 [:a] [:b :b]] 1.0})]]))
 
-(synthetic-models 0.0)
-(synthetic-models 0.2903)
-(synthetic-models 0.81815)
-(synthetic-models 2.07692)
-
-
 (defn game-data [game lev]
   (cond
-   (= game :mario) (sample-data lev)
-   (= game :refraction) (read-logs (str "resources/traces/refraction/refraction." lev ".i.trace"))
-   (= game :synthetic) (gamalyzer.read.synth/read-logs (synthetic-models (get {0 0.0, 1 0.2903, 2 0.81815, 3 2.07692} lev)) (hash-set) nil)))
+   ;(= game :mario) (mario/sample-data lev)
+   ;(= game :refraction) (edn/read-logs (str "resources/traces/refraction/refraction." lev ".i.trace"))
+   (= game :edn) (edn/sample-data)
+   (= game :synthetic) (synth/sample-data (synthetic-models (get {0 0.0, 1 0.2903, 2 0.81815, 3 2.07692} lev)))))
 
 (defn find-pivots [k vs doms]
   (let [n (count vs)
@@ -129,13 +125,6 @@
   (let [logs (game-data game lev)]
     (process-data logs k)))
 
-(defn mappify [t]
-  (cond
-   (map? t) (into (hash-map) (map (fn [[k v]]
-                                    [(mappify k) (mappify v)]) t))
-   (coll? t) (map mappify t)
-   true t))
-
 (defresource data [game]
 	:available-media-types ["application/edn"]
 	:handle-ok
@@ -151,6 +140,7 @@
           (mappify (test-data game lev k))))))
 
 (defroutes data-routes
-  (ANY "/refraction" [] (data :refraction))
-  (ANY "/mario" [] (data :mario))
-  (ANY "/synthetic" [] (data :synthetic)))
+  ;(ANY "/refraction" [] (data :refraction))
+  ;(ANY "/mario" [] (data :mario))
+  (ANY "/synthetic" [] (data :synthetic))
+	(ANY "/edn" [] (data :edn)))
