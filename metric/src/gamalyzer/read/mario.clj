@@ -67,7 +67,7 @@
         samples-per-frame 24
         quantize 4]
     (when-not (or is-act is-csv)
-      (throw (.InvalidArgumentException
+      (throw (.IllegalArgumentException
               (str "Path " path " is neither ACT nor CSV."))))
     (with-open [f (if is-act (input-stream fl) (reader fl))]
       (let [pfile (.getParentFile fl)

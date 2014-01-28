@@ -12,11 +12,13 @@
                  [org.clojure/math.numeric-tower "0.0.2"]
                  [net.mikera/vectorz-clj "0.17.0"]
                  [net.mikera/core.matrix "0.15.0"]
-                 [clojure-csv/clojure-csv "2.0.1"]]
+                 [clojure-csv/clojure-csv "2.0.1"]
+								 [org.clojure/core.typed "0.2.25"]]
 ;  :jar-exclusions [#"(?:^|/).svn/"]
   :aot [gamalyzer.data.input gamalyzer.data.util gamalyzer.read.mario gamalyzer.cmp.tt]
   :repositories {"project" {:url "file:../maven_repository"
 														:username ""
-														:passphrase ""}}
-  :plugins []
+														:passphrase ""}
+								 "sonatype-oss-public" "https://oss.sonatype.org/content/groups/public/"}
+  :plugins [[lein-typed "0.3.1"]]
   :source-paths ["src"])
