@@ -88,13 +88,14 @@
 						 path
 						 (fn [dom]
 							 (cond
+								(nil? dom) (if (number? belt)
+														 (make-range belt)
+														 (multiset belt))
 								(and (range? dom) (number? belt)) (expand-range dom belt)
 								(range? dom) (throw (IllegalArgumentException. "Cannot extend a range with a keyword"))
 								(number? belt) (throw (IllegalArgumentException. "Cannot extend a multiset with a number"))
 								(multiset? dom) (conj dom belt)
-								true (if (number? belt)
-											 (make-range belt)
-											 (multiset belt))))))
+								true (throw (IllegalArgumentException. "Cannot figure out what to do with this combination of values"))))))
 
 (ann get-domains [Domains ITerm -> DomainMap])
 (defn get-domains [doms det]
@@ -168,9 +169,9 @@
 
 ; Informal tests and usage examples.
 
-;(expand-domain (make-input 0 0 :a '(1)) (make-domains))
-;(expand-domain (make-input 0 0 :a '((1))) (make-domains))
-;(expand-domain (make-input 0 0 :a '((1) :a (2))) (make-domains))
-;(expand-domain (make-input 1 0 :a '((2) :b (3))) (expand-domain (make-input 0 0 :a '((1) :a (2))) (make-domains)))
+#_(expand-domain (make-input 0 0 :a '(1)) (make-domains))
+#_(expand-domain (make-input 0 0 :a '((1))) (make-domains))
+#_(expand-domain (make-input 0 0 :a '((1) :a (2))) (make-domains))
+#_(expand-domain (make-input 1 0 :a '((2) :b (3))) (expand-domain (make-input 0 0 :a '((1) :a (2))) (make-domains)))
 #_(expand-domain (make-input 1 0 :b '((1) :b (2))) (expand-domain (make-input 0 0 :a '((1) :a (2))) (make-domains)))
 #_(expand-domain (make-input 1 0 :a [[:p 1] :b [2]]) (expand-domain (make-input 0 0 :a [[:p 1] :a [2]]) (make-domains)))

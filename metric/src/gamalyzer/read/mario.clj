@@ -151,10 +151,10 @@
 
 ; Informal tests and usage examples.
 
-#_(with-open [in (input-stream "/Users/jcosborn/Projects/gamalyzer/resources/traces/mario/lazy-forward/actions.act")]
-  (let [{ts :traces doms :domains} (read-log-trace "/Users/jcosborn/Projects/gamalyzer/resources/traces/mario/lazy-cig-sergeykarakovskiy/actions.act" #{} (make-domains))
+#_(with-open [in (input-stream "/Users/jcosborn/Projects/gamalyzer/vis/resources/traces/mario/lazy-forward/actions.act")]
+  (let [{ts :traces doms :domains} (read-log-trace "/Users/jcosborn/Projects/gamalyzer/vis/resources/traces/mario/lazy-cig-sergeykarakovskiy/actions.act" #{} (make-domains))
         bcount (.available in)
         the-bytes (byte-array bcount)
         _ (.read in the-bytes)
         nts (-readActions (make-traces ts doms) the-bytes)]
-    (println (gamalyzer.data.util/mappify nts))))
+    (println nts)))
