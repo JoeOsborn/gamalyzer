@@ -5,8 +5,7 @@
             [hiccup.middleware :refer [wrap-base-url]]
             [compojure.handler :as handler]
             [compojure.route :as route]
-            [gamalyzer.rsrc.home :refer [home-routes]]
-            [gamalyzer.rsrc.data :refer [data-routes]]))
+            [gamalyzer.rsrc.home :refer [home-routes]]))
 
 (defn init []
   (println "gamalyzer is starting"))
@@ -15,12 +14,10 @@
   (println "gamalyzer is shutting down"))
 
 (defroutes app-routes
-  (route/resources "/" )
+  (route/resources "/resources")
   (route/not-found "Not Found"))
 
 (def app
-  (-> (routes home-routes data-routes app-routes)
+  (-> (routes home-routes app-routes)
       (handler/site)
       (wrap-base-url)))
-
-

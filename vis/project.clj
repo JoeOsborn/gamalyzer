@@ -10,6 +10,7 @@
                  [compojure "1.1.5"]
                  [hiccup "1.0.4"]
                  [ring "1.2.1"]
+                 [ring-server "0.3.1"]
                  [liberator "0.10.0"]
                  [org.clojars.achim/multiset "0.1.0-SNAPSHOT"]
                  [org.clojure/math.numeric-tower "0.0.2"]

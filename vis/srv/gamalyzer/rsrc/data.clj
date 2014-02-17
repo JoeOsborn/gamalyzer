@@ -3,6 +3,7 @@
 						[liberator.core :refer [resource defresource]]
             [gamalyzer.read.edn :as edn]
 						[gamalyzer.read.synth :as synth]
+						[gamalyzer.read.mario :as mario]
             [gamalyzer.cmp.tt :refer [pivot-distances]]
             [gamalyzer.cmp.tt.cced :refer [with-warp-window]]
 						[gamalyzer.data.util :refer [mappify]]
@@ -105,10 +106,10 @@
 
 (defn game-data [game lev]
   (cond
-   ;(= game :mario) (mario/sample-data lev)
-   ;(= game :refraction) (edn/read-logs (str "resources/traces/refraction/refraction." lev ".i.trace"))
-   (= game :edn) (edn/sample-data)
-   (= game :synthetic) (synth/sample-data (synthetic-models (get {0 0.0, 1 0.2903, 2 0.81815, 3 2.07692} lev)))))
+   (= game "mario") (mario/sample-data lev)
+   (= game "refraction") (edn/read-logs (str "resources/traces/refraction/refraction." lev ".i.trace"))
+   (= game "edn") (edn/sample-data)
+   (= game "synthetic") (synth/sample-data (synthetic-models (get {0 0.0, 1 0.2903, 2 0.81815, 3 2.07692} lev)))))
 
 (defn find-pivots [k vs doms]
   (let [n (count vs)
@@ -134,22 +135,15 @@
   (let [logs (game-data game lev)]
     (process-data logs k)))
 
-(defresource data [game]
-	:available-media-types ["application/edn"]
-	:handle-ok
-		(fn [ctx]
-      (let [req (:query-params (:request ctx))
-            lev (or (and (get req "level") (read-string (get req "level")))
-                    (game {:mario 0 :refraction 5 :synthetic 0}))
-            k (or (and (get req "k") (read-string (get req "k")))
-                  10)
-            window (or (and (get req "window") (read-string (get req "window")))
-                       20)]
-        (with-warp-window window
-          (mappify (test-data game lev k))))))
+(defn data [game ctx]
+	(println "game is" game)
+	(let [req (:query-params (:request ctx))
+				lev (or (and (get req "level") (read-string (get req "level")))
+								(get {"mario" 0 "refraction" 5 "synthetic" 0 "edn" 5} game))
+				k (or (and (get req "k") (read-string (get req "k")))
+							10)
+				window (or (and (get req "window") (read-string (get req "window")))
+									 20)]
+		(with-warp-window window
+			(mappify (test-data game lev k)))))
 
-(defroutes data-routes
-  ;(ANY "/refraction" [] (data :refraction))
-  ;(ANY "/mario" [] (data :mario))
-  (ANY "/synthetic" [] (data :synthetic))
-	(ANY "/edn" [] (data :edn)))

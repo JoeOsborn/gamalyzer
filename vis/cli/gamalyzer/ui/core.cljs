@@ -12,7 +12,10 @@
 
 (strokes/bootstrap)
 
-(def mode :edn)
+(def url (.-URL js/document))
+(def chunks-str (second (re-matches #"[htpfiles]+://[^/]+/(.*)" url)))
+(def chunks (.split chunks-str "/"))
+(def mode (symbol (first chunks)))
 
 (def width 400)
 (def height 400)
@@ -20,29 +23,28 @@
 (def y (.. (d3.scale.linear) (domain [0 1]) (range [(- height 10) 10])))
 (defn y->t [v] (max 0 (.round js/Math (.invert y v))))
 
-(def level (mode {:synthetic 0 :edn nil})) ; :mario 0 :refraction 5}))
 (def pivot-count 10)
 (def warp-window 20)
 (def fetched-data nil)
 
 (declare kick!)
 
+(defn my-fetch-edn [url callback]
+	(log "loading from " url)
+	(-> d3
+			(.xhr url "application/edn")
+			(.header "Accept" "application/edn")
+			(.response strokes/edn-parser-callback)
+			(.get callback)))
+
 (defn reload-data! []
-  (strokes/fetch-edn (str (name mode) "?k=" pivot-count "&window=" warp-window (if level (str "&level=" level) ""))
+	(log "query " (str (.-URL js/document) "?k=" pivot-count "&window=" warp-window))
+  (my-fetch-edn (str (.-URL js/document) "?k=" pivot-count "&window=" warp-window)
                      (fn [err root]
-                       (log "load" err root)
+                       (log "load err:" err)
                        (set! fetched-data root)
                        (kick! fetched-data))))
 
-(if-not (= mode :edn)
-	(make-slider! "level"
-								(mode {:synthetic 0}) ; :mario 0 :refraction 3})
-								level
-								(mode {:synthetic 3}) ; :mario 39 :refraction 5})
-								1
-								(fn [n]
-									(set! level n)
-									(reload-data!))))
 (make-slider! "pivot-count" 0 pivot-count 20 1
               (fn [n]
                 (set! pivot-count n)
@@ -318,6 +320,7 @@
 
 (defn kick! [root]
   (log "kick")
+	(log "root: " root)
   (.attr svg {:width width :height height})
   (set! x (.. (d3.scale.linear)
               (domain [0 1])
