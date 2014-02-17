@@ -1,4 +1,4 @@
-(ns gamalyzer.rsrc.data
+(ns gamalyzer.data
   (:require [compojure.core :refer :all]
 						[liberator.core :refer [resource defresource]]
             [gamalyzer.read.edn :as edn]

@@ -1,7 +1,7 @@
 (ns gamalyzer.rsrc.home
   (:require [compojure.core :refer :all]
 						[liberator.core :refer [resource defresource]]
-						[gamalyzer.rsrc.data :refer [data]]
+						[gamalyzer.data :refer [data]]
             [hiccup.core :refer [html]]))
 
 (defresource home [g]
