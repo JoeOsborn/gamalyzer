@@ -1,5 +1,6 @@
 (ns gamalyzer.rsrc.home
   (:require [compojure.core :refer :all]
+						[clojure.string :refer [split]]
 						[liberator.core :refer [resource defresource]]
 						[gamalyzer.data :refer [data]]
             [hiccup.core :refer [html]]))
@@ -21,8 +22,9 @@
 							[:script {:src "/resources/js/generated/gamalyzer.js" :type "text/javascript"}]]
 						 [:body [:script {:type "text/javascript"} "goog.require(\"gamalyzer.ui.core\")"]]])
 			"application/edn"
-			(data (str g) ctx))))
+			(data (rest (split (get-in ctx [:request :uri]) #"/"))
+						(get-in ctx [:request :query-params])))))
 
 (defroutes home-routes
-  (ANY "/:g" [g] (if (= (str g) "resources") nil (home g)))
-  (ANY "/:g/*" [g] (if (= (str g) "resources") nil (home g))))
+  (ANY "/:g" [g] (if (= (str g) "resources") nil (home)))
+  (ANY "/:g/*" [g] (if (= (str g) "resources") nil (home))))

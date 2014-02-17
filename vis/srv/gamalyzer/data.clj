@@ -104,7 +104,7 @@
                                            [1 [:a] [:a :b]] 0.0
                                            [1 [:a] [:b :b]] 1.0})]]))
 
-(defn game-data [game lev]
+(defn game-data [[game lev]]
   (cond
    (= game "mario") (mario/sample-data lev)
    (= game "refraction") (edn/read-logs (str "resources/traces/refraction/refraction." lev ".i.trace"))
@@ -131,19 +131,16 @@
      pivot-diffs-t
      (x-coords (last pivot-diffs-t))]))
 
-(defn test-data [game lev k]
-  (let [logs (game-data game lev)]
+(defn test-data [group k]
+  (let [logs (game-data group)]
     (process-data logs k)))
 
-(defn data [game ctx]
-	(println "game is" game)
-	(let [req (:query-params (:request ctx))
-				lev (or (and (get req "level") (read-string (get req "level")))
-								(get {"mario" 0 "refraction" 5 "synthetic" 0 "edn" 5} game))
-				k (or (and (get req "k") (read-string (get req "k")))
+(defn data [group params]
+	(let [k (or (and (get params "k") (read-string (get params "k")))
 							10)
-				window (or (and (get req "window") (read-string (get req "window")))
+				window (or (and (get params "window") (read-string (get params "window")))
 									 20)]
 		(with-warp-window window
-			(mappify (test-data game lev k)))))
+			(mappify (test-data group k)))))
 
+(data ["mario" "1"] nil)
