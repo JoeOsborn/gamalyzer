@@ -61,6 +61,16 @@
 (make-slider! "link-strength" 0.0 link-strength 0.005 0.0001 (fn [t] (set! link-strength t) (kick! fetched-data)))
 (make-slider! "iterations" 0 iterations 100 20 (fn [i] (set! iterations i) (kick! fetched-data)))
 
+(def js-summarizers {})
+(def cljs-summarizers {})
+
+;;;; f(TracesJson, ServerSummaryJson, TMin, TMax) -> void
+(defn ^:export addSummarizer [nom jsfunc]
+  (set! js-summarizers (assoc js-summarizers nom jsfunc)))
+;;;; f(Traces, ServerSummary, TMin, TMax) -> void
+(defn add-summarizer [nom cljsfunc]
+  (set! cljs-summarizers (assoc cljs-summarizers nom cljsfunc)))
+
 (.. d3
 	(select "body")
 	(append "svg")
@@ -105,13 +115,20 @@
       (selectAll ".trace .input")
       (classed mode #(pred %))))
 
+(defn all-traces [] (.. svg (selectAll ".trace") (data)))
+(defn y-supremum [] (second (.domain y)))
+
+(defn selected-traces [min-x min-y max-x max-y]
+       (let [traces (all-traces)
+         inputs (filter #(and (<= min-x (first (:position %)) max-x)
+                              (<= min-y (- (second (:position %)) 10) max-y))
+                        (mapcat :inputs traces))
+         ids-in-x (into (hash-set) (map :id inputs))
+         traces-in-x (filter #(contains? ids-in-x (:id %)) traces)]
+                [traces-in-x inputs]))
+
 (defn selected-trace-segments [min-x min-y max-x max-y]
-  (let [traces (.. svg (selectAll ".trace") (data))
-        inputs (filter #(and (<= min-x (first (:position %)) max-x)
-                             (<= min-y (- (second (:position %)) 10) max-y))
-                       (mapcat :inputs traces))
-        ids-in-x (into (hash-set) (map :id inputs))
-        traces-in-x (filter #(contains? ids-in-x (:id %)) traces)]
+   (let [[selected-traces selected-inputs] (selected-traces min-x min-y max-x max-y)]
     (when-not (empty? inputs)
       (pad-times traces-in-x
                  (apply min (map :time inputs))
@@ -298,18 +315,24 @@
 
 (def brush (.. svg (append "g") (attr "class" "brush")))
 
-(def *custom-vis-fn* nil)
-
-(defn custom-vis []
-  (when *custom-vis-fn* (*custom-vis-fn*)))
+(def summary-prev-values [nil 0 0])
+(defn update-summary! [traces min-t max-t]
+       (when-not (= summary-prev-values [traces min-t max-t])
+               (set! summary-prev-values [traces min-t max-t])
+               (doseq [jsf (vals js-summarizers)]
+                       (jsf (clj->js traces) min-t max-t))
+               (doseq [cljsf (vals cljs-summarizers)]
+                       (cljsf traces min-t max-t))))
 
 (defn update-brush-e! []
-  (let [[[min-x min-y] [max-x max-y]]
-        (.extent d3.event.target)]
+  (let [[[min-x min-y] [max-x max-y]] (.extent d3.event.target)
+				selected-traces-0 (first (selected-traces min-x min-y max-x max-y))
+                             brush-empty (empty? selected-traces-0)
+                             selected-traces (if brush-empty (all-traces) selected-traces-0)]
     (highlight-selected! "selected-brush"
                          (input-contained-fn min-x min-y
                                              max-x max-y))
-    (custom-vis)))
+    (update-summary! selected-traces (y->t min-y) (y->t max-y))))
 
 (defn prepare-brush! []
   (.call brush
@@ -340,7 +363,9 @@
     (prepare-brush!)
     (let [xs (time (layout-xs init-xs slices))]
       (time (update-layers! pivots xs))))
-  (custom-vis))
+  (update-summary! (all-traces) 0 (y-supremum)))
+
+(add-summarizer :logger #(log "summarize " (count %1) " " %2 " " %3 " " %4))
 
 (if fetched-data
   (kick! fetched-data)
