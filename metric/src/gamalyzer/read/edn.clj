@@ -115,6 +115,8 @@
                        (file-seq (file "resources/traces/")))]
 		 (read-logs files #{} nil))))
 
+(defn read-path [matching-files real-path excess-path settings]
+	(read-logs matching-files #{} (make-domains)))
 
 ; Informal tests and usage examples.
 

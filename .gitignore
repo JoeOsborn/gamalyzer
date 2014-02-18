@@ -6,9 +6,10 @@ targets/
 target/
 .lein-deps-sum
 .nrepl-port
-*/resources/public/js/generated/
-*/resources/traces/ortega_shaker/
-*/resources/traces/refraction/
-*/resources/traces/mario/
+vis/resources/public/js/generated/
+vis/resources/traces/ortega_shaker/
+vis/resources/traces/refraction/
+vis/resources/traces/mario/
+vis/resources/traces/mario.zip
 maven_repository/gamalyzer-metric/
 .lein-repl-history

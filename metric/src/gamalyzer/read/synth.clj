@@ -36,6 +36,13 @@
 				 doms (expand-domain** vs (if (nil? domains) (make-domains) domains))]
 		 (make-traces vs doms))))
 
+(defn read-path [matching-files real-path excess-path settings]
+	(sample-data [[:a 1 2 {[1 [:a] [:a]] 1.0}]
+								[:b 1 2 {[1 [:b] [:a]] 1.0}]
+								[:c 1 2 {[1 [:a] [:b]] 1.0}]]
+							 (hash-set :system :random)
+							 (make-domains)))
+
 ; Informal tests and usage examples.
 
 #_(sample-data [[:a 1 2 {[1 [:a] [:a]] 1.0}]

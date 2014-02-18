@@ -127,8 +127,11 @@
   ([lev]
    (let [files (filter #(.endsWith (.getName %)
                                    (str "_" lev ".csv"))
-                       (file-seq (file "resources/traces/ortega_shaker/")))]
+                       (file-seq (file "resources/traces/mario/PlayersReplays")))]
 		 (read-logs files #{} nil))))
+
+(defn read-path [matching-files real-path excess-path settings]
+	(read-logs matching-files #{} (make-domains)))
 
 (defn -readLogs [files] (read-logs files #{} nil))
 
@@ -151,8 +154,8 @@
 
 ; Informal tests and usage examples.
 
-#_(with-open [in (input-stream "/Users/jcosborn/Projects/gamalyzer/vis/resources/traces/mario/lazy-forward/actions.act")]
-  (let [{ts :traces doms :domains} (read-log-trace "/Users/jcosborn/Projects/gamalyzer/vis/resources/traces/mario/lazy-cig-sergeykarakovskiy/actions.act" #{} (make-domains))
+#_(with-open [in (input-stream "/Users/jcosborn/Projects/gamalyzer/vis/resources/traces/mario-ai/lazy-forward/actions.act")]
+  (let [{ts :traces doms :domains} (read-log-trace "/Users/jcosborn/Projects/gamalyzer/vis/resources/traces/mario-ai/lazy-cig-sergeykarakovskiy/actions.act" #{} (make-domains))
         bcount (.available in)
         the-bytes (byte-array bcount)
         _ (.read in the-bytes)

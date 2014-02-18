@@ -119,16 +119,16 @@
 (defn y-supremum [] (second (.domain y)))
 
 (defn selected-traces [min-x min-y max-x max-y]
-       (let [traces (all-traces)
-         inputs (filter #(and (<= min-x (first (:position %)) max-x)
-                              (<= min-y (- (second (:position %)) 10) max-y))
-                        (mapcat :inputs traces))
-         ids-in-x (into (hash-set) (map :id inputs))
-         traces-in-x (filter #(contains? ids-in-x (:id %)) traces)]
-                [traces-in-x inputs]))
+	(let [traces (all-traces)
+				inputs (filter #(and (<= min-x (first (:position %)) max-x)
+														 (<= min-y (- (second (:position %)) 10) max-y))
+											 (mapcat :inputs traces))
+				ids-in-x (into (hash-set) (map :id inputs))
+				traces-in-x (filter #(contains? ids-in-x (:id %)) traces)]
+		[traces-in-x inputs]))
 
 (defn selected-trace-segments [min-x min-y max-x max-y]
-   (let [[selected-traces selected-inputs] (selected-traces min-x min-y max-x max-y)]
+  (let [[traces-in-x inputs] (selected-traces min-x min-y max-x max-y)]
     (when-not (empty? inputs)
       (pad-times traces-in-x
                  (apply min (map :time inputs))
@@ -321,18 +321,20 @@
                (set! summary-prev-values [traces min-t max-t])
                (doseq [jsf (vals js-summarizers)]
                        (jsf (clj->js traces) min-t max-t))
-               (doseq [cljsf (vals cljs-summarizers)]
-                       (cljsf traces min-t max-t))))
+				 (doseq [cljsf (vals cljs-summarizers)]
+					 (cljsf traces min-t max-t))))
 
 (defn update-brush-e! []
-  (let [[[min-x min-y] [max-x max-y]] (.extent d3.event.target)
+	(let [[[min-x min-y] [max-x max-y]] (.extent d3.event.target)
 				selected-traces-0 (first (selected-traces min-x min-y max-x max-y))
-                             brush-empty (empty? selected-traces-0)
-                             selected-traces (if brush-empty (all-traces) selected-traces-0)]
-    (highlight-selected! "selected-brush"
-                         (input-contained-fn min-x min-y
-                                             max-x max-y))
-    (update-summary! selected-traces (y->t min-y) (y->t max-y))))
+				brush-empty (empty? selected-traces-0)
+				selected-traces (if brush-empty (all-traces) selected-traces-0)]
+		;[min-t max-t] #_(if brush-empty [(y->t min-y) (y->t max-y)] [0 (y-supremum)])]
+		(highlight-selected! "selected-brush"
+												 (input-contained-fn min-x min-y
+																						 max-x max-y))
+		;              (when brush-empty (.call brush (.extent brush [[0 0] [0 0]]))
+		(update-summary! selected-traces (y->t min-y) (y->t max-y))))
 
 (defn prepare-brush! []
   (.call brush
@@ -361,9 +363,9 @@
     (.domain stroke-width
              [0 (apply max 10 (map :similar-count pivots))])
     (prepare-brush!)
-    (let [xs (time (layout-xs init-xs slices))]
-      (time (update-layers! pivots xs))))
-  (update-summary! (all-traces) 0 (y-supremum)))
+		(let [xs (time (layout-xs init-xs slices))]
+			(time (update-layers! pivots xs))))
+	(update-summary! (all-traces) 0 (y-supremum)))
 
 (add-summarizer :logger #(log "summarize " (count %1) " " %2 " " %3 " " %4))
 

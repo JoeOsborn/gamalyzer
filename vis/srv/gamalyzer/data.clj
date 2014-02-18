@@ -1,5 +1,7 @@
 (ns gamalyzer.data
-  (:require [compojure.core :refer :all]
+  (:require [clojure.java.io :refer [file]]
+						[clojure.string :refer [join split]]
+						[compojure.core :refer :all]
 						[liberator.core :refer [resource defresource]]
             [gamalyzer.read.edn :as edn]
 						[gamalyzer.read.synth :as synth]
@@ -104,12 +106,88 @@
                                            [1 [:a] [:a :b]] 0.0
                                            [1 [:a] [:b :b]] 1.0})]]))
 
-(defn game-data [[game lev]]
-  (cond
-   (= game "mario") (mario/sample-data lev)
-   (= game "refraction") (edn/read-logs (str "resources/traces/refraction/refraction." lev ".i.trace"))
-   (= game "edn") (edn/sample-data)
-   (= game "synthetic") (synth/sample-data (synthetic-models (get {0 0.0, 1 0.2903, 2 0.81815, 3 2.07692} lev)))))
+(defn directories [path]
+	(letfn
+		[(gather [p]
+						 (if-not p
+							 []
+							 (conj (gather (.getParentFile p)) p)))]
+		(reverse (gather path))))
+
+(defn split-path [path]
+	;look for a file at path
+	;if it's not there, keep going up through path until finding a real file
+	;put everything to the right of there into a list of strings
+	;keep everything to the left in a (file)
+	(let [paths (directories (file (join "/" path)))
+				real-path (first (filter #(.exists %) paths))
+				remaining-path (join (nthrest (join "/" path)
+																			(inc (count (.getPath real-path)))))]
+		[real-path (split remaining-path #"/")]))
+
+#_(split-path ["/Users" "jcosborn" "Projects" "gamalyzer" "vis" "resources" "traces" "mario" "0"])
+
+(def default-settings
+	{:reader 'gamalyzer.read.edn
+	 :excess-path-separator "_"
+	 :excess-path-match :sequence
+	 :suffix ["edn" "trace"]})
+
+(defn merge-settings [settings settings-file]
+	(merge settings (read-string (slurp settings-file))))
+
+(defn find-settings [path]
+	(let [candidate-settings (map #(file % "gamalyzer.clj")
+																(reverse (directories path)))]
+		(reduce #(if (.exists %2) (merge-settings %1 %2) %1)
+						default-settings
+						candidate-settings)))
+
+(defn all-trace-files [path sufs]
+	(let [files (file-seq path)]
+		(filter (fn [f]
+							(let [fname (.getName f)]
+								(and (not (= fname "gamalyzer.clj"))
+										 (some #(.endsWith fname %) sufs))))
+						files)))
+
+; drop files whose components don't satisfy the matcher
+; matcher is one of :sequence or :somewhere or :ignore.
+; sequence: components must have, in sequence, the elements of excess-path as a prefix (as split by sep).
+; somewhere: components must have all of the elements of excess-path as components (as split by sep)
+; ignore: don't do anything fancy; don't filter anything out.
+(defn filter-matching-files [all-files excess-path sep matcher]
+	(let [sep-re (re-pattern (str "(" sep ")|\\."))]
+		(filter
+		 (condp = matcher
+			 :ignore (fn [_] true)
+			 :sequence #(.startsWith (.getName %)
+															 (join sep excess-path))
+			 :somewhere #(every? (apply hash-set (split (.getName %) sep-re))
+													 excess-path))
+		 all-files)))
+
+(defn game-data [path]
+	; look for a file at path
+	; look upwards until finding a gamalyzer.clj file (or /resources/traces)
+	; apply defaults from all parent directories too.
+	(let [[real-path excess-path] (split-path path)
+				settings (find-settings real-path)
+				; Err, weird thing with the cons coming into the array
+				reader-data (:reader settings)
+				reader (if (symbol? reader-data)
+								 reader-data
+								 (first (rest reader-data)))
+				reader-fn (ns-resolve reader 'read-path)
+				ps (:excess-path-separator settings)
+				pm (:excess-path-match settings)
+				all-files (all-trace-files real-path (:suffix settings))
+				; if there's any excess-path, use it to filter the files
+				matching-files
+					(if (empty? excess-path)
+						all-files
+						(filter-matching-files all-files excess-path ps pm))]
+		(reader-fn matching-files real-path excess-path settings)))
 
 (defn find-pivots [k vs doms]
   (let [n (count vs)
@@ -141,6 +219,8 @@
 				window (or (and (get params "window") (read-string (get params "window")))
 									 20)]
 		(with-warp-window window
-			(mappify (test-data group k)))))
+			(mappify (test-data (concat ["resources" "traces"] group) k)))))
 
-(data ["mario" "1"] nil)
+;(game-data (concat ["resources" "traces"] ["mario" "0"]))
+
+;(data ["refraction" "5"] nil)

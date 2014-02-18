@@ -5,7 +5,7 @@
 						[gamalyzer.data :refer [data]]
             [hiccup.core :refer [html]]))
 
-(defresource home [g]
+(defresource home []
   :available-media-types ["text/html" "application/edn"]
   :handle-ok
   (fn [ctx]
