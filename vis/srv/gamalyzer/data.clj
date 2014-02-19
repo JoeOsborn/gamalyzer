@@ -9,6 +9,7 @@
             [gamalyzer.cmp.tt :refer [pivot-distances]]
             [gamalyzer.cmp.tt.cced :refer [with-warp-window]]
 						[gamalyzer.data.util :refer [mappify]]
+						[gamalyzer.data.input :refer [make-traces make-domains expand-domain**]]
             [clojure.core.matrix :refer [mutable slices to-nested-vectors new-array
                                          mget mset! shape square dimension-count
                                          submatrix to-nested-vectors get-row]])
@@ -123,9 +124,10 @@
 				real-path (first (filter #(.exists %) paths))
 				remaining-path (join (nthrest (join "/" path)
 																			(inc (count (.getPath real-path)))))]
-		[real-path (split remaining-path #"/")]))
+		[real-path (if (= remaining-path "") [] (split remaining-path #"/"))]))
 
-#_(split-path ["/Users" "jcosborn" "Projects" "gamalyzer" "vis" "resources" "traces" "mario" "0"])
+#_(split-path ["/Users" "jcosborn" "Projects" "gamalyzer" "vis" "resources" "traces" "mario"])
+
 
 (def default-settings
 	{:reader 'gamalyzer.read.edn
@@ -144,10 +146,11 @@
 						candidate-settings)))
 
 (defn all-trace-files [path sufs]
-	(let [files (file-seq path)]
+	(let [files (.listFiles path)]
 		(filter (fn [f]
 							(let [fname (.getName f)]
-								(and (not (= fname "gamalyzer.clj"))
+								(and (.isFile f)
+										 (not (= fname "gamalyzer.clj"))
 										 (some #(.endsWith fname %) sufs))))
 						files)))
 
@@ -167,6 +170,11 @@
 													 excess-path))
 		 all-files)))
 
+; Naive implementation.
+(defn join-traces [ts1 ts2]
+	(make-traces (into (:traces ts1) (:traces ts2))
+							 (expand-domain** (:traces ts2) (:domains ts1))))
+
 (defn game-data [path]
 	; look for a file at path
 	; look upwards until finding a gamalyzer.clj file (or /resources/traces)
@@ -182,12 +190,22 @@
 				ps (:excess-path-separator settings)
 				pm (:excess-path-match settings)
 				all-files (all-trace-files real-path (:suffix settings))
+				; if there is no excess path, also drill down
+				; into child directories to find more friends.
+				; we assume that the existence of an excess path
+				; means that the files to be used (or at least their directories)
+				; are already specified.
+				child-traces (if-not (empty? excess-path)
+											 (make-traces [] (make-domains))
+											 (reduce #(join-traces %1 (game-data (split (.getPath %2) #"/")))
+															 (make-traces [] (make-domains))
+															 (filter (fn [f] (.isDirectory f)) (.listFiles real-path))))
 				; if there's any excess-path, use it to filter the files
 				matching-files
 					(if (empty? excess-path)
 						all-files
 						(filter-matching-files all-files excess-path ps pm))]
-		(reader-fn matching-files real-path excess-path settings)))
+		(join-traces (reader-fn matching-files real-path excess-path settings) child-traces)))
 
 (defn find-pivots [k vs doms]
   (let [n (count vs)
@@ -221,6 +239,6 @@
 		(with-warp-window window
 			(mappify (test-data (concat ["resources" "traces"] group) k)))))
 
-;(game-data (concat ["resources" "traces"] ["mario" "0"]))
+#_(game-data (concat ["resources" "traces"] ["mario" "0"]))
 
-;(data ["refraction" "5"] nil)
+#_(data ["refraction"] nil)
