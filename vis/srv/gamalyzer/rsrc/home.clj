@@ -2,7 +2,7 @@
   (:require [compojure.core :refer :all]
 						[clojure.edn :as edn]
 						[clojure.java.io :as io]
-						[clojure.string :refer [split]]
+						[clojure.string :refer [split join]]
 						[liberator.core :refer [resource defresource]]
 						[gamalyzer.data :refer [data]]
             [hiccup.core :refer [html]]))
@@ -37,6 +37,8 @@
         (.printStackTrace e)
         {:message (format "IOException: " (.getMessage e))}))))
 
+(edn/read-string "{\"t1\" [ [:i :player :game (:move) :place (2 [6 8])] [:i :player :game (:move) :place (3 [7 9])] ] \"t2\" [ [:i :player :game (:move) :place (2 [6 8])] ] }")
+
 (defresource home []
 	:allowed-methods [:get :post]
   :available-media-types ["text/html" "application/edn"]
@@ -62,7 +64,23 @@
 	:post!
 	(fn [ctx]
 		(let [data (::data ctx)
-					path (rest (split (get-in ctx [:request :uri]) #"/"))]
+					path (rest (split (get-in ctx [:request :uri]) #"/"))
+					dir (io/file (str "resources/traces/" (join "/" (butlast path))))
+					filename (io/file dir (str (last path) ".traces"))]
+			(.mkdirs dir)
+			; avoid multiple writers overlapping
+			(dosync
+			 ; maybe it would be better if I could lock just the one file
+			 ; instead of "all writers", but...
+			 (with-open [w (io/writer filename :append true)]
+				 (doseq [[k v] data]
+					 (.write w (pr-str [:log_start (str k)]))
+					 (.write w "\n")
+					 (doseq [i v]
+						 (.write w (pr-str i))
+						 (.write w "\n"))
+					 (.write w (pr-str :log_end))
+					 (.write w "\n"))))
 			(println "post" data "to" path))))
 
 (defroutes home-routes

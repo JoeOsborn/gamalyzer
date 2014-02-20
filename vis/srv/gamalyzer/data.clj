@@ -133,7 +133,7 @@
 	{:reader 'gamalyzer.read.edn
 	 :excess-path-separator "_"
 	 :excess-path-match :sequence
-	 :suffix ["edn" "trace"]})
+	 :suffix ["edn" "trace" "traces"]})
 
 (defn merge-settings [settings settings-file]
 	(merge settings (read-string (slurp settings-file))))
@@ -207,6 +207,8 @@
 						(filter-matching-files all-files excess-path ps pm))]
 		(join-traces (reader-fn matching-files real-path excess-path settings) child-traces)))
 
+#_(game-data (concat ["resources" "traces"] ["newgame" "lev-0" "normal_a"]))
+
 (defn find-pivots [k vs doms]
   (let [n (count vs)
         k (min k n)
@@ -242,3 +244,5 @@
 #_(game-data (concat ["resources" "traces"] ["mario" "0"]))
 
 #_(data ["refraction"] nil)
+
+#_(data ["newgame"] nil)

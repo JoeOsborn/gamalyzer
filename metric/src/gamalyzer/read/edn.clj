@@ -7,15 +7,8 @@
 
 (defn- open-log [path blacklist]
   (let [file (FileReader. path)
-        pb (PushbackReader. file)
-        props (edn/read pb)]
-    (if (= (first props) :properties)
-      ; later: do stuff with (second props) i.e. prop-list, which is a pairlist like:
-      ; ([:game :dominion] [:root :root] [:events (:i)])
-      {:file file :reader pb :blacklist blacklist}
-      (do
-        (.close file)
-        (throw (Exception. "no log properties"))))))
+        pb (PushbackReader. file)]
+		{:file file :reader pb :blacklist blacklist}))
 
 (defn- close-log [h]
   (.close (:file h))
@@ -72,10 +65,12 @@
                     (let [new-domains (expand-domain inp doms)]
                       (recur (conj! v inp) new-domains))))
              true
-               (recur v doms))))
+               (do
+								 (println "Skipping unhandled or out of scope term " t)
+								 (recur v doms)))))
         (do
-          (close-log h)
-          (throw (Exception. "Log does not begin with :log_start term")))))
+					(println "Skipping unhandled or out-of-scope top-level term " start)
+					(recur h domains))))
     nil))
 
 (defn read-logs
@@ -120,4 +115,4 @@
 
 ; Informal tests and usage examples.
 
-#_(:traces (time (read-logs "/Users/jcosborn/Projects/gamalyzer/vis/resources/traces/refraction/refraction.5.i.trace" 1 (hash-set) nil)))
+#_(:traces (time (read-logs "/Users/jcosborn/Projects/gamalyzer/vis/resources/traces/refraction/5/refraction.5.i.trace" 2 (hash-set) nil)))
