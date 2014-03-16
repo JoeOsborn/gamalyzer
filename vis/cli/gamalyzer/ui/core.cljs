@@ -23,6 +23,8 @@
 (def y (.. (d3.scale.linear) (domain [0 1]) (range [(- height 10) 10])))
 (defn y->t [v] (max 0 (.round js/Math (.invert y v))))
 
+(defn ^:export tToY [t] (y t))
+
 (def pivot-count 10)
 
 (defn ^:export pivotCount [] pivot-count)
@@ -47,7 +49,6 @@
                        (log "load err:" err)
                        (set! fetched-data root)
                        (kick! fetched-data))))
-
 (make-slider! "pivot-count" 0 pivot-count 20 1
               (fn [n]
                 (set! pivot-count n)
