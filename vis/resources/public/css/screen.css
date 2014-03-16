@@ -8,11 +8,31 @@ h1 {
   text-align: center;
 }
 
+#svg {
+	float:left;
+}
+
+#pzl_last_container {
+	width:auto;
+	height:auto;
+}
 .pzl_last_vis_frame {
 	width:160px;
 	height:130px;
 }
 .pzl_last_unneeded {
+	display:none;
+}
+
+#pzl_seq_container {
+	width:auto;
+	height:auto;
+}
+.pzl_seq_vis_frame {
+	width:160px;
+	height:130px;
+}
+.pzl_seq_unneeded {
 	display:none;
 }
 

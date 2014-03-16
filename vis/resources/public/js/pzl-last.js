@@ -1,9 +1,13 @@
 var chunks = location.pathname.split("/");
 var id = chunks[1];
 var lev = chunks[2];
+var performUndos = chunks[3] != "split";
 var gameCode;
 var baseState;
 var frames = [];
+
+var frameContainer = document.createElement("div");
+frameContainer.id = "pzl_last_container";
 
 var externalsReady = false;
 var internalsReady = false;
@@ -79,7 +83,8 @@ function makeFrame(cb) {
 		console.log("Load with gs "+baseState);
 		visFrame.contentWindow.pzl_last.init(
 			baseState,
-			lev
+			lev,
+			performUndos
 		);
 		cb(visFrame);
 	};
@@ -88,7 +93,7 @@ function makeFrame(cb) {
 	} else {
 		visFrame.attachEvent('onload', initializeFrame);
 	}
-	document.body.appendChild(visFrame);
+	frameContainer.appendChild(visFrame);
 }
 
 var dirNameInput = {
@@ -100,6 +105,7 @@ var dirNameInput = {
 }
 
 document.addEventListener("DOMContentLoaded", function(event) {
+	document.body.appendChild(frameContainer);
 	internalsReady = true;
 	tryToRun();
 });
