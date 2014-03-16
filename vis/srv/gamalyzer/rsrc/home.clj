@@ -37,7 +37,14 @@
         (.printStackTrace e)
         {:message (format "IOException: " (.getMessage e))}))))
 
-(edn/read-string "{\"t1\" [ [:i :player :game (:move) :place (2 [6 8])] [:i :player :game (:move) :place (3 [7 9])] ] \"t2\" [ [:i :player :game (:move) :place (2 [6 8])] ] }")
+#_(edn/read-string "{\"t1\" [ [:i :player :game (:move) :place (2 [6 8])] [:i :player :game (:move) :place (3 [7 9])] ] \"t2\" [ [:i :player :game (:move) :place (2 [6 8])] ] }")
+
+(defn bonus-scripts [ctx]
+	(map (fn [nom] [:script {:src (str "/resources/js/" nom ".js")
+													 :type "text/javascript"}])
+			 ; The params might be an individual item or a list,
+			 ; based on how many ?vis=... params there are.
+			 (flatten [(get-in ctx [:request :query-params "vis"])])))
 
 (defresource home []
 	:allowed-methods [:get :post]
@@ -47,14 +54,15 @@
 		(condp = (get-in ctx [:representation :media-type])
 			"text/html"
 			(html [:html
-						 [:head
-							[:link {:rel "stylesheet" :href "/resources/css/d3.slider.css"}]
-							[:link {:rel "stylesheet" :href "/resources/css/screen.css"}]
-							; [:script {:type "text/javascript" :id "lt_ws" :src "http://localhost:53538/socket.io/lighttable/ws.js"}]
-							[:script {:src "/resources/js/generated/goog/base.js" :type "text/javascript"}]
-							[:script {:src "/resources/js/d3.js" :type "text/javascript"}]
-							[:script {:src "/resources/js/d3.slider.js" :type "text/javascript"}]
-							[:script {:src "/resources/js/generated/gamalyzer.js" :type "text/javascript"}]]
+						 (vec (concat [:head
+											[:link {:rel "stylesheet" :href "/resources/css/d3.slider.css"}]
+											[:link {:rel "stylesheet" :href "/resources/css/screen.css"}]
+											; [:script {:type "text/javascript" :id "lt_ws" :src "http://localhost:53538/socket.io/lighttable/ws.js"}]
+											[:script {:src "/resources/js/generated/goog/base.js" :type "text/javascript"}]
+											[:script {:src "/resources/js/d3.js" :type "text/javascript"}]
+											[:script {:src "/resources/js/d3.slider.js" :type "text/javascript"}]
+											[:script {:src "/resources/js/generated/gamalyzer.js" :type "text/javascript"}]]
+										 (bonus-scripts ctx)))
 						 [:body [:script {:type "text/javascript"} "goog.require(\"gamalyzer.ui.core\")"]]])
 			"application/edn"
 			(data (rest (split (get-in ctx [:request :uri]) #"/"))
@@ -68,20 +76,16 @@
 					dir (io/file (str "resources/traces/" (join "/" (butlast path))))
 					filename (io/file dir (str (last path) ".traces"))]
 			(.mkdirs dir)
+			(println "post" data "to" path)
 			; avoid multiple writers overlapping
 			(dosync
 			 ; maybe it would be better if I could lock just the one file
 			 ; instead of "all writers", but...
 			 (with-open [w (io/writer filename :append true)]
-				 (doseq [[k v] data]
-					 (.write w (pr-str [:log_start (str k)]))
-					 (.write w "\n")
-					 (doseq [i v]
-						 (.write w (pr-str i))
-						 (.write w "\n"))
-					 (.write w (pr-str :log_end))
-					 (.write w "\n"))))
-			(println "post" data "to" path))))
+				 (doseq [trace data
+								 t trace]
+					 (.write w (pr-str t))
+					 (.write w "\n")))))))
 
 (defroutes home-routes
   (ANY "/:g" [g] (if (= (str g) "resources") nil (home)))
