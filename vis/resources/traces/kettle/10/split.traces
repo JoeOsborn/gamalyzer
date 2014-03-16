@@ -1,0 +1,40 @@
+[:log_start "6608c24c-0860-4497-a30a-cb857e03f1b5"]
+[:i :player :game (:move) :move (:left)]
+[:i :player :game (:move) :move (:right)]
+[:i :player :game (:move) :move (:up)]
+[:i :player :game (:move) :move (:down)]
+[:i :system :game (:resolve) :win ()]
+:log_end
+[:log_start "2337fd64-531d-4ffd-89d3-6ee1628ad378"]
+[:i :player :game (:move) :move (:down)]
+[:i :player :game (:move) :move (:up)]
+[:i :player :game (:move) :restart (:restart)]
+:log_end
+[:log_start "2aacbfa8-4188-4773-8bdb-a5c2750516d8"]
+[:i :player :game (:move) :move (:right)]
+[:i :player :game (:move) :move (:down)]
+[:i :player :game (:move) :restart (:restart)]
+:log_end
+[:log_start "5c2096da-3943-43d0-b07b-03c3d1eabdbe"]
+[:i :player :game (:move) :move (:down)]
+[:i :player :game (:move) :restart (:restart)]
+:log_end
+[:log_start "5dd15cec-5ad0-45bf-9e73-887d80a5549e"]
+[:i :player :game (:move) :move (:down)]
+[:i :player :game (:move) :move (:left)]
+[:i :player :game (:move) :restart (:restart)]
+:log_end
+[:log_start "cd6b8b6e-d2a7-43a3-bd84-cc8264e843e2"]
+[:i :player :game (:move) :move (:up)]
+[:i :player :game (:move) :move (:right)]
+[:i :player :game (:move) :move (:down)]
+[:i :player :game (:move) :move (:left)]
+[:i :player :game (:move) :restart (:restart)]
+:log_end
+[:log_start "40306f28-ada6-4998-a5bd-e0a7728ab966"]
+[:i :player :game (:move) :move (:up)]
+[:i :player :game (:move) :move (:down)]
+[:i :player :game (:move) :move (:left)]
+[:i :player :game (:move) :move (:right)]
+[:i :player :game (:move) :restart (:restart)]
+:log_end

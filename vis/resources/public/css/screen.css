@@ -8,6 +8,10 @@ h1 {
   text-align: center;
 }
 
+.vis_frame {
+	float:right;
+}
+
 .brush {
   fill: darkgray;
 }

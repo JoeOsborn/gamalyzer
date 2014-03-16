@@ -312,17 +312,23 @@
     (update-trace-inputs! trace-layers)
     trace-layers))
 
+;; borrowed from ibdknox/jayq
+(defn map->js [m]
+  (let [out (js-obj)]
+    (doseq [[k v] m]
+      (aset out (name k) v))
+    out))
 
 (def brush (.. svg (append "g") (attr "class" "brush")))
 
 (def summary-prev-values [nil 0 0])
 (defn update-summary! [traces min-t max-t]
-       (when-not (= summary-prev-values [traces min-t max-t])
-               (set! summary-prev-values [traces min-t max-t])
-               (doseq [jsf (vals js-summarizers)]
-                       (jsf (clj->js traces) min-t max-t))
-				 (doseq [cljsf (vals cljs-summarizers)]
-					 (cljsf traces min-t max-t))))
+	(when-not (= summary-prev-values [traces min-t max-t])
+		(set! summary-prev-values [traces min-t max-t])
+		(doseq [jsf (vals js-summarizers)]
+			(jsf (clj->js (sequence traces)) min-t max-t))
+		(doseq [cljsf (vals cljs-summarizers)]
+			(cljsf traces min-t max-t))))
 
 (defn update-brush-e! []
 	(let [[[min-x min-y] [max-x max-y]] (.extent d3.event.target)
@@ -334,7 +340,7 @@
 												 (input-contained-fn min-x min-y
 																						 max-x max-y))
 		;              (when brush-empty (.call brush (.extent brush [[0 0] [0 0]]))
-		(update-summary! selected-traces (y->t min-y) (y->t max-y))))
+		(update-summary! selected-traces (y->t max-y) (y->t min-y))))
 
 (defn prepare-brush! []
   (.call brush

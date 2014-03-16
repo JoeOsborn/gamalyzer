@@ -1,0 +1,82 @@
+<head>
+    <link rel="stylesheet" href="/resources/css/pzl-last.css"/>
+    <script type="text/javascript">
+        var initialState;
+        var currentLevel;
+        function jumpToLevel(lev) {
+            textMode=false;
+            titleScreen=false;
+            quittingMessageScreen=false;
+            messageselected=false;
+            winning=false;
+            currentLevel = lev;
+            loadLevelFromState(state,lev);
+            canvasResize();
+            clearInputs();
+        }
+        window.pzl_last = {};
+        window.pzl_last.init = function(gameCode, lev){
+            initialState = compile(["restart"], gameCode);
+            jumpToLevel(lev);
+        }
+        window.pzl_last.update = function(traceSteps, tmin, tmax) {
+            //update state(s) of vis canvas(es) up to tmax
+            console.log("min: "+tmin+", max: "+tmax);
+            jumpToLevel(currentLevel);
+            replayQueue = traceSteps.slice(0,tmax).reverse();
+            console.log(JSON.stringify(replayQueue));
+            for(var i = 0; i < tmax && i < traceSteps.length; i++) {
+                var val=replayQueue.pop();
+                if(isNaN(val) && val.substr(0,6) == "random") {
+                    throw new Exception("Replay queue has unconsumed random "+val);
+                }
+                if (val==="undo") {
+                    DoUndo();
+                } else if (val==="restart") {
+                    DoRestart();
+                } else if (val==="wait") {
+                    autoTickGame();
+                } else if (val==="quit" || val==="win") {
+                    continue;
+                } else {
+                    processInput(val);
+                }
+                while (againing) {
+                    againing=false;
+                    processInput(-1);
+                }
+            }
+        }
+    </script>
+</head>
+<body>
+    <div class="gameContainer">
+    <canvas id="gameCanvas"></canvas>
+    </div>
+
+    <script src="/resources/js/puzzlescript/globalVariables.js"></script>
+    <script src="/resources/js/puzzlescript/debug_replay.js"></script>
+
+    <script type="text/javascript">
+        unitTesting = true;
+        testsAutoAdvanceLevel = false;
+    </script>
+
+    <script src="/resources/js/puzzlescript/font.js"></script>
+    <script src="/resources/js/puzzlescript/rng.js"></script>
+    <script src="/resources/js/puzzlescript/riffwave.js"></script>
+    <script src="/resources/js/puzzlescript/sfxr.js"></script>
+    <script src="/resources/js/puzzlescript/codemirror.js"></script>
+    <script src="/resources/js/puzzlescript/colors.js"></script>
+    <script src="/resources/js/puzzlescript/graphics.js"></script>
+    <script src="/resources/js/puzzlescript/engine.js"></script>
+    <script src="/resources/js/puzzlescript/parser.js"></script>
+    <script src="/resources/js/puzzlescript/compiler.js"></script>
+    <script src="/resources/js/puzzlescript/inputoutput.js"></script>
+
+    <script type="text/javascript">
+        function consolePrint(msg) {
+            console.log(msg);
+        }
+    </script>
+</body>

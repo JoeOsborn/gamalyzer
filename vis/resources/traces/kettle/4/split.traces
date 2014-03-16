@@ -1,0 +1,15 @@
+[:log_start "5fbe07ba-3f30-41ad-b954-62cd14c8bebe"]
+[:i :player :game (:move) :move (:up)]
+[:i :player :game (:move) :move (:left)]
+[:i :system :game (:resolve) :win ()]
+:log_end
+[:log_start "858158f1-a535-429c-9516-64ec6d7c38b9"]
+[:i :player :game (:move) :move (:up)]
+[:i :player :game (:move) :move (:down)]
+[:i :player :game (:move) :restart (:restart)]
+:log_end
+[:log_start "b547925d-346a-4032-87a9-5f88fea85250"]
+[:i :player :game (:move) :move (:up)]
+[:i :player :game (:move) :move (:left)]
+[:i :system :game (:resolve) :win ()]
+:log_end
