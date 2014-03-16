@@ -8,8 +8,12 @@ h1 {
   text-align: center;
 }
 
-.vis_frame {
-	float:right;
+.pzl_last_vis_frame {
+	width:160px;
+	height:130px;
+}
+.pzl_last_unneeded {
+	display:none;
 }
 
 .brush {

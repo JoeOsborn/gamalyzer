@@ -24,6 +24,9 @@
 (defn y->t [v] (max 0 (.round js/Math (.invert y v))))
 
 (def pivot-count 10)
+
+(defn ^:export pivotCount [] pivot-count)
+
 (def warp-window 20)
 (def fetched-data nil)
 

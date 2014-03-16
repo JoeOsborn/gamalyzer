@@ -948,7 +948,7 @@ function ruleMovementMaskAgrees(ruleMovementMask,cellMovementMask){
     }
 }
 
-var ellipsisDirection = 1<<31;
+
 var randomEntityMask = parseInt('00101', 2);
 
 

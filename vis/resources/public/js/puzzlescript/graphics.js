@@ -147,6 +147,8 @@ function generateGlyphImages(spritecanvas,spritectx) {
 
 			spritectx.clearRect(0, 0, cellwidth, cellheight);
 
+                console.log("hello");
+
 			for (var i=0;i<g.length;i++){
 				var id = g[i];
 				if (id===-1) {
@@ -232,7 +234,6 @@ function generateGlyphImages(spritecanvas,spritectx) {
 	}
 }
 
-var canvas;
 var ctx;
 
 
@@ -442,7 +443,6 @@ var oldcellwidth=0;
 var oldcellheight=0;
 var oldtextmode=-1;
 var oldfgcolor=-1;
-var forceRegenImages=false;
 function canvasResize() {
 //  window.console.log("canvasresize");
     canvas.style.width = canvas.parentNode.clientWidth;
