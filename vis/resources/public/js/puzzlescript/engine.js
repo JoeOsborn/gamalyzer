@@ -168,8 +168,10 @@ function unloadGame() {
 	    bannedGroup:[]
 	};
 	generateTitleScreen();
-	canvasResize();
-	redraw();
+    if(!unitTesting) {
+        canvasResize();
+        redraw();
+    }
 }
 
 function generateTitleScreen()
@@ -365,13 +367,16 @@ function drawMessageScreen() {
 
 
 function loadLevelFromState(state,levelindex) {
-	forceRegenImages=true;
+    if(levelindex != curlevel) {
+        forceRegenImages=true;
+    }
 	titleScreen=false;
 	titleMode=curlevel>0?1:0;
 	titleSelection=curlevel>0?1:0;
 	titleSelected=false;
 	curlevel=levelindex;
     againing=false;
+    dirty.all = true;
     var leveldat = state.levels[levelindex];
     if (leveldat===null) {
     	consolePrint("Trying to access a level that doesn't exist.");
@@ -414,12 +419,19 @@ function loadLevelFromState(state,levelindex) {
 	    if ('run_rules_on_level_start' in state.metadata) {
 			processInput(-1,true);
 	    }
+        if(!unitTesting) {
+            canvasResize();
+        }
 
 	    if (levelindex=== 0){
 			tryPlayStartLevelSound();
 		} else {
 			tryPlayStartLevelSound();
 		}
+
+        if(!unitTesting) {
+            canvasResize();
+        }
 
 	} else {
 		tryPlayShowMessageSound();
@@ -467,12 +479,14 @@ canvasResize();
 //setTimeout(redraw,100);
 
 function tick() {
-redraw();
+    if(!unitTesting) {
+        redraw();
+    }
 }
 
 
 function tryPlaySimpleSound(soundname) {
-	if (state.sfx_Events[soundname]!==undefined) {
+	if (!unitTesting && state.sfx_Events[soundname]!==undefined) {
 		var seed = state.sfx_Events[soundname];
 		playSeed(seed);
 	}
@@ -701,6 +715,7 @@ var messagetext="";
 function restoreLevel(lev) {
 	oldflickscreendat=[];
 	level.dat=lev.concat([]);
+    dirty.all = true;
 
 	//width/height don't change, neither does layercount
 	for (var i=0;i<level.dat.length;i++) {
@@ -720,7 +735,9 @@ function restoreLevel(lev) {
     againing=false;
     messagetext="";
     level.commandQueue=[];
-	redraw();
+    if(!unitTesting) {
+        redraw();
+    }
 }
 
 var zoomscreen=false;
@@ -887,6 +904,9 @@ function repositionEntitiesOnLayer(positionIndex,layer,dirMask)
     var movingEntities = sourceMask&layerMask;
     level.dat[positionIndex] = sourceMask&(~layerMask);
     level.dat[targetIndex] = targetMask | movingEntities;
+    
+    dirty[positionIndex] = true;
+    dirty[targetIndex] = true;
 
 
     var colIndex=(targetIndex/level.height)|0;
@@ -1623,6 +1643,7 @@ function applyRuleAt(rule,delta,tuple,check) {
         		sfxDestroyMask = sfxDestroyMask | thingsDestroyed;
 
                 level.dat[currentIndex]=curCellMask;
+                dirty[currentIndex] = true;
                 level.movementMask[currentIndex]=curMovementMask;
 
                 var colIndex=(currentIndex/level.height)|0;
@@ -2075,10 +2096,12 @@ function processInput(dir,dontCheckWin,dontModify) {
     		DoUndo(true);
     		seedsToPlay_CanMove=[];
     		seedsToPlay_CantMove=[];
-    		redraw();
-        		if (verbose_logging) {
-        			consoleCacheDump();
-        		}
+            if(!unitTesting) {
+                redraw();
+            }
+        	if (verbose_logging) {
+        		consoleCacheDump();
+        	}
     		return;
 	    }
 
@@ -2090,7 +2113,9 @@ function processInput(dir,dontCheckWin,dontModify) {
 	    	DoRestart(true);
     		seedsToPlay_CanMove=[];
     		seedsToPlay_CantMove=[];
-    		redraw();
+            if(!unitTesting) {
+                redraw();
+            }
     		if (verbose_logging) {
     			consoleCacheDump();
     		}
@@ -2197,8 +2222,10 @@ function processInput(dir,dontCheckWin,dontModify) {
 
     }
 
-    redraw();
-
+    if(!unitTesting) {
+        redraw();
+    }
+    		
 	if (verbose_logging) {
 		consoleCacheDump();
 	}

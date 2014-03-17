@@ -4,6 +4,8 @@ var testsAutoAdvanceLevel=true;
 var curlevel=0;
 var levelEditorOpened=false;
 
+var dirty = {};
+
 try {
  	if (!!window.localStorage) { 
 		if (localStorage[document.URL]!==undefined) {

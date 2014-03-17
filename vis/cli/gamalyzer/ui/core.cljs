@@ -43,16 +43,19 @@
 			(.get callback)))
 
 (defn reload-data! []
-	(log "query " (str (.-URL js/document) "?k=" pivot-count "&window=" warp-window))
-  (my-fetch-edn (str (.-URL js/document) "?k=" pivot-count "&window=" warp-window)
-                     (fn [err root]
-                       (log "load err:" err)
-                       (set! fetched-data root)
-                       (kick! fetched-data))))
+	(log "chunks:" (last chunks))
+	(let [;lc (last chunks)
+				joiner (if (= (.indexOf (last chunks) "?") -1) "?" "&")]
+		(log "query " (str (.-URL js/document) joiner "k=" pivot-count "&window=" warp-window))
+		(my-fetch-edn (str (.-URL js/document) joiner "k=" pivot-count "&window=" warp-window)
+									(fn [err root]
+										(log "load err:" err)
+										(set! fetched-data root)
+										(kick! fetched-data)))))
 (make-slider! "pivot-count" 0 pivot-count 20 1
-              (fn [n]
-                (set! pivot-count n)
-                (reload-data!)))
+							(fn [n]
+								(set! pivot-count n)
+								(reload-data!)))
 (make-slider! "warp-window" 0 warp-window 100 1
               (fn [w]
                 (set! warp-window w)

@@ -8,7 +8,7 @@ var frames = [];
 var xmlns = "http://www.w3.org/2000/svg";
 var svg, frameLine;
 
-var tickMillis = 1000;
+var tickMillis = 500;
 
 var frameContainer = document.createElement("div");
 frameContainer.id = "pzl_last_container";
@@ -147,17 +147,16 @@ var minFrame = -1;
 var currentFrame = -1;
 
 function updateFrames(traces, tmin, tmax) {
-	minFrame = tmin;
-	maxFrame = tmax+1;
+	minFrame = tmin-1;
+	maxFrame = tmax;
 	currentFrame = minFrame;
 	displayTraces = traces.map(function(t) {
-		return t.inputs.map(glz_to_pzl).slice(0,tmax+1)
+		return t.inputs.map(glz_to_pzl).slice(0,tmax+1);
 	});
 	resetFrames();
 }
 
 function resetFrames() {
-	currentFrame = minFrame;
 	for(var i = 0; i < frames.length; i++) {
 		var f = frames[i];
 		if(i < displayTraces.length) {
@@ -165,31 +164,32 @@ function resetFrames() {
 				f.classList.remove("pzl_seq_unneeded");
 			}
 			var visW = f.contentWindow;
-			visW.pzl_seq.reset_to((minFrame <= 0 ? [] : displayTraces[i].slice(0,minFrame-1)));
+			visW.pzl_seq.reset_to(minFrame < 0 ? [] : displayTraces[i].slice(0,minFrame+1));
 		} else {
 			if(!f.classList.contains("pzl_seq_unneeded")) {
 				f.classList.add("pzl_seq_unneeded");
 			}
 		}
 	}
+	currentFrame = minFrame;
 	moveFrameLine();
 }
 
 function tickFrames() {
-	if(currentFrame == maxFrame) {
+	if(currentFrame >= maxFrame) {
 		resetFrames();
 	} else {
 		currentFrame++;
-	}
-	for(var i = 0; i < displayTraces.length; i++) {
-		var f = frames[i];
-		var visW = f.contentWindow;
-		var trace = displayTraces[i];
-		if(currentFrame < trace.length) {
-			visW.pzl_seq.tick(displayTraces[i][currentFrame]);
+		for(var i = 0; i < displayTraces.length; i++) {
+			var f = frames[i];
+			var visW = f.contentWindow;
+			var trace = displayTraces[i];
+			if(currentFrame >= 0 && currentFrame < trace.length) {
+				visW.pzl_seq.tick(trace[currentFrame],true);
+			}
 		}
+		moveFrameLine();
 	}
-	moveFrameLine();
 }
 
 function moveFrameLine() {
@@ -209,10 +209,7 @@ function moveFrameLine() {
 		svg.appendChild(frameLine);
 	}
 	var visibleLine = currentFrame;
-	if(visibleLine == maxFrame) {
-		visibleLine = minFrame-1;
-	}
-	console.log('show line at '+visibleLine+' for min ' + minFrame + ' max '+ maxFrame);
+//	console.log('show line at '+visibleLine+' for min ' + minFrame + ' max '+ maxFrame);
 	var y = gamalyzer.ui.core.tToY(visibleLine);
 	frameLine.setAttribute("y1", y);
 	frameLine.setAttribute("y2", y);

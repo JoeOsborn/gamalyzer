@@ -12,6 +12,7 @@
       winning=false;
       currentLevel = lev;
       loadLevelFromState(state,lev);
+      dirty.all = true;
       canvasResize();
       clearInputs();
     }
@@ -29,19 +30,26 @@
 
       //update state(s) of vis canvas(es) up to tmax
       jumpToLevel(currentLevel);
+      dirty.all = true;
       for(var i = 0; i < traceSteps.length; i++) {
         var val=traceSteps[i];
-        tick(val);
+        window.pzl_seq.tick(val,false);
       }
+      dirty.all = true;
+      redraw();
     }
-    window.pzl_seq.tick = function(step) {
+    window.pzl_seq.tick = function(step,draw) {
       if(isNaN(step) && step.substr(0,6) == "random") {
         throw new Exception("Replay queue has unconsumed random "+val);
       }
-      if (step==="undo" && performUndos) {
-        DoUndo();
-      } else if (step==="restart" && performUndos) {
-        DoRestart();
+      if (step==="undo") {
+        if(performUndos) {
+          DoUndo();
+        }
+      } else if (step==="restart") {
+        if(performUndos) {
+          DoRestart();
+        }
       } else if (step==="wait") {
         autoTickGame();
       } else if (step==="quit" || step==="win") {
@@ -52,6 +60,9 @@
       while (againing) {
         againing=false;
         processInput(-1);
+      }
+      if(draw) {
+        redraw();
       }
     }
   </script>

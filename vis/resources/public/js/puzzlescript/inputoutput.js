@@ -23,6 +23,7 @@ function addLeftColumn() {
 	for (var i=0;i<level.height;i++) {
 		level.dat.splice(i,0,bgMask);
 	}
+    dirty.all = true;
 	level.width++;
 	recalcLevelBounds();
 	columnAdded=true;
@@ -33,6 +34,7 @@ function addRightColumn(){
 	for (var i=0;i<level.height;i++) {
 		level.dat.push(bgMask);
 	}
+    dirty.all = true;
 	level.width++;
 	recalcLevelBounds();
 	columnAdded=true;
@@ -43,6 +45,7 @@ function addTopRow(){
 	for (var i=level.width-1;i>=0;i--) {
 		level.dat.splice(i*level.height,0,bgMask);
 	}
+    dirty.all = true;
 	level.height++;
 	recalcLevelBounds();
 	columnAdded=true;
@@ -52,6 +55,7 @@ function addBottomRow(){
 	for (var i=level.width-1;i>=0;i--) {
 		level.dat.splice(level.height+i*level.height,0,bgMask);
 	}
+    dirty.all = true;
 	level.height++;
 	recalcLevelBounds();
 	columnAdded=true;
@@ -65,6 +69,7 @@ function removeLeftColumn() {
 	for (var i=0;i<level.height;i++) {
 		level.dat.splice(0,1);
 	}
+    dirty.all = true;
 	level.width--;
 	recalcLevelBounds();
 	columnAdded=true;
@@ -78,6 +83,7 @@ function removeRightColumn(){
 	for (var i=0;i<level.height;i++) {
 		level.dat.splice(level.dat.length-1,1);
 	}
+    dirty.all = true;
 	level.width--;
 	recalcLevelBounds();
 	columnAdded=true;
@@ -91,6 +97,7 @@ function removeTopRow(){
 	for (var i=level.width-1;i>=0;i--) {
 		level.dat.splice(i*level.height,1);
 	}
+    dirty.all = true;
 	level.height--;
 	recalcLevelBounds();
 	columnAdded=true;
@@ -103,6 +110,7 @@ function removeBottomRow(){
 	for (var i=level.width-1;i>=0;i--) {
 		level.dat.splice(level.height-1+i*level.height,1);
 	}
+    dirty.all = true;
 	level.height--;
 	recalcLevelBounds();
 	columnAdded=true;
@@ -243,6 +251,7 @@ function levelEditorClick(event,click) {
 
 		var coordIndex = mouseCoordY + mouseCoordX*level.height;
 		level.dat[coordIndex]=glyphmask;
+        dirty[coordIndex]=true;
 		redraw();
 	}
 	else if (click) {
@@ -276,6 +285,7 @@ function levelEditorRightClick(event,click) {
 		var glyphmask = 1<<state.backgroundid;
 		var coordIndex = mouseCoordY + mouseCoordX*level.height;
 		level.dat[coordIndex]=glyphmask;
+        dirty[coordIndex]=true;
 		redraw();
 	}
 	else if (click) {
