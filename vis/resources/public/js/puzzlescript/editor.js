@@ -41,7 +41,8 @@ editor.on('mousedown', function(cm, event) {
     playSound(seed);
   } else if (event.target.className == 'cm-LEVEL') {
     if (event.ctrlKey||event.metaKey) {
-      compile(["levelline",cm.posFromMouse(event).line]);      
+      compile(["levelline",cm.posFromMouse(event).line]);
+	  dirty.all = true;
     }
   }
 });

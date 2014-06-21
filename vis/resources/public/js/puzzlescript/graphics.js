@@ -168,7 +168,7 @@ function generateGlyphImages(spritecanvas,spritectx) {
 
 	{
 		//make highlight thingy
-    	spritectx.fillStyle = '#FFFFFF';
+		spritectx.fillStyle = '#FFFFFF';
 		spritectx.clearRect(0, 0, cellwidth, cellheight);
 
 		spritectx.fillRect(0,0,cellwidth,1);
@@ -191,7 +191,7 @@ function generateGlyphImages(spritecanvas,spritectx) {
 	}
 	{
 		//make highlight thingy
-    	spritectx.fillStyle = '#FFFFFF';
+		spritectx.fillStyle = '#FFFFFF';
 		spritectx.clearRect(0, 0, cellwidth, cellheight);
 
 		var minx=((cellwidth/2)-1)|0;
@@ -354,10 +354,6 @@ function redraw() {
             }
         }
 
-        //x=i, y=j
-        //idx = x * height + y
-        //y = idx % height
-
         var i,j,posIndex;
         function drawTileAt(i,j,idx) {
             var posMask = level.dat[posIndex];
@@ -369,11 +365,10 @@ function redraw() {
                 }
             }
         }
-        //possible future optimization: store the whole last-drawn level.dat and redraw only the specific
-        //different tiles, or else redraw if the level has changed.
-        // console.log("redraw time");
+        //possible future optimization: instead of tracking dirty in several places, 
+		//store the whole last-drawn level.dat and redraw only the specific
+        //different tiles, or else redraw if the current level has changed.
         if(!dirty.all) {
-            console.log("redraw a few things");
             for(posIndex in dirty) {
                 if(posIndex == "all") { continue; }
                 var j = Math.floor(posIndex % level.height);
@@ -381,7 +376,6 @@ function redraw() {
                 drawTileAt(i,j,posIndex);
             }
         } else {
-            console.log("redraw everything");
             for(var i=mini; i < maxi; i++) {
                 for(var j=minj; j < maxj; j++) {
                     posIndex = j + i * level.height;

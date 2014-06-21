@@ -2,9 +2,7 @@
   (:require [strokes :refer [d3]]))
 
 (defn log [& stuff]
-  (. js/console (log (apply str stuff)))
-  (last stuff))
-(set! *print-fn* log)
+  (apply println stuff))
 
 (defn vectorize [s]
   (if (sequential? s)

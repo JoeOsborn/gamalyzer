@@ -72,10 +72,11 @@
         mat0 (new-array :vectorz [k n max-length])]
     (reduce
      (fn [[pivots mat] ki]
-         (let [pivot-index (select-pivot pivots mat traces)
-               pivot (nth traces pivot-index)]
-           (calc-pivot-diffs! mat ki pivot traces doms)
-           [(conj pivots pivot-index) mat]))
+			 (println "select another pivot " ki)
+			 (let [pivot-index (select-pivot pivots mat traces)
+						 pivot (nth traces pivot-index)]
+				 (calc-pivot-diffs! mat ki pivot traces doms)
+				 [(conj pivots pivot-index) mat]))
      [[] mat0]
      (range 0 k))))
 

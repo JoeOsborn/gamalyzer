@@ -8,9 +8,11 @@
                                        make-slider!]]
             [gamalyzer.ui.symbols :refer [pick-symbol]]
             [gamalyzer.ui.layout :refer [layout-xs
-						                             link-threshold link-strength iterations]]))
+						                             link-threshold link-strength iterations]]
+						[cljs.reader :refer [read-string]]))
 
 (strokes/bootstrap)
+(enable-console-print!)
 
 (def url (.-URL js/document))
 (def chunks-str (second (re-matches #"[htpfiles]+://[^/]+/(.*)" url)))
@@ -39,7 +41,10 @@
 	(-> d3
 			(.xhr url "application/edn")
 			(.header "Accept" "application/edn")
-			(.response strokes/edn-parser-callback)
+			(.response (fn [r]
+									 (log "got resp")
+									 (strokes/edn-parser-callback r)
+									 ))
 			(.get callback)))
 
 (defn reload-data! []
@@ -50,9 +55,16 @@
 		(my-fetch-edn (str (.-URL js/document) joiner "k=" pivot-count "&window=" warp-window)
 									(fn [err root]
 										(log "load err:" err)
-										(set! fetched-data root)
-										(kick! fetched-data)))))
-(make-slider! "pivot-count" 0 pivot-count 20 1
+										(if err
+											(let [msg (.-responseText err)]
+												((.. d3 (select "body") (html msg))))
+											(do
+												(set! fetched-data root)
+												(println kick!)
+												(println fetched-data)
+												(kick! fetched-data)))))))
+
+(make-slider! "pivot-count" 0 pivot-count 40 1
 							(fn [n]
 								(set! pivot-count n)
 								(reload-data!)))

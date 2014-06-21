@@ -367,9 +367,9 @@ function drawMessageScreen() {
 
 
 function loadLevelFromState(state,levelindex) {
-    if(levelindex != curlevel) {
-        forceRegenImages=true;
-    }
+	if(levelindex != curlevel) {
+		forceRegenImages=true;
+	}
 	titleScreen=false;
 	titleMode=curlevel>0?1:0;
 	titleSelection=curlevel>0?1:0;
@@ -383,7 +383,6 @@ function loadLevelFromState(state,levelindex) {
     	return;
     }
     if (leveldat.message===undefined) {
-        consolePrint("Starting level "+curlevel);
     	titleMode=0;
     	textMode=false;
 	    level = {
@@ -400,10 +399,10 @@ function loadLevelFromState(state,levelindex) {
 	    };
 
 	    for (var i=0;i<level.height;i++) {
-	    	level.rowCellContents[i]=0;
+			level.rowCellContents[i]=0;
 	    }
 	    for (var i=0;i<level.width;i++) {
-	    	level.colCellContents[i]=0;
+			level.colCellContents[i]=0;
 	    }
 
 	    for (var i=0;i<level.movementMask.length;i++)
@@ -419,19 +418,19 @@ function loadLevelFromState(state,levelindex) {
 	    if ('run_rules_on_level_start' in state.metadata) {
 			processInput(-1,true);
 	    }
-        if(!unitTesting) {
-            canvasResize();
-        }
+		if(!unitTesting) {
+			canvasResize();
+		}
 
-	    if (levelindex=== 0){
+		if (levelindex=== 0){
 			tryPlayStartLevelSound();
 		} else {
 			tryPlayStartLevelSound();
 		}
 
-        if(!unitTesting) {
-            canvasResize();
-        }
+		if(!unitTesting) {
+			canvasResize();
+		}
 
 	} else {
 		tryPlayShowMessageSound();
@@ -443,7 +442,7 @@ function loadLevelFromState(state,levelindex) {
 }
 
 function autoTickGame() {
-  pushInput("wait");
+	pushInput("wait");
 	processInput(-1);
 }
 
@@ -479,9 +478,9 @@ canvasResize();
 //setTimeout(redraw,100);
 
 function tick() {
-    if(!unitTesting) {
-        redraw();
-    }
+	if(!unitTesting) {
+		redraw();
+	}
 }
 
 
@@ -715,7 +714,7 @@ var messagetext="";
 function restoreLevel(lev) {
 	oldflickscreendat=[];
 	level.dat=lev.concat([]);
-    dirty.all = true;
+	dirty.all = true;
 
 	//width/height don't change, neither does layercount
 	for (var i=0;i<level.dat.length;i++) {
@@ -724,20 +723,20 @@ function restoreLevel(lev) {
 		level.rigidGroupIndexMask[i]=0;
 	}
 
-    for (var i=0;i<level.height;i++) {
-    	level.rowCellContents[i]=0;
-    }
-    for (var i=0;i<level.width;i++) {
-    	level.colCellContents[i]=0;
-    }
+	for (var i=0;i<level.height;i++) {
+		level.rowCellContents[i]=0;
+	}
+	for (var i=0;i<level.width;i++) {
+		level.colCellContents[i]=0;
+	}
 
 
-    againing=false;
-    messagetext="";
-    level.commandQueue=[];
-    if(!unitTesting) {
-        redraw();
-    }
+	againing=false;
+	messagetext="";
+	level.commandQueue=[];
+	if(!unitTesting) {
+		redraw();
+	}
 }
 
 var zoomscreen=false;
@@ -904,12 +903,9 @@ function repositionEntitiesOnLayer(positionIndex,layer,dirMask)
     var movingEntities = sourceMask&layerMask;
     level.dat[positionIndex] = sourceMask&(~layerMask);
     level.dat[targetIndex] = targetMask | movingEntities;
-    
     dirty[positionIndex] = true;
     dirty[targetIndex] = true;
-
-
-    var colIndex=(targetIndex/level.height)|0;
+	var colIndex=(targetIndex/level.height)|0;
 	var rowIndex=(targetIndex%level.height);
     level.colCellContents[colIndex]=(level.colCellContents[colIndex]|movingEntities);
     level.rowCellContents[rowIndex]=(level.rowCellContents[rowIndex]|movingEntities);
@@ -955,7 +951,7 @@ function repositionEntitiesAtCell(positionIndex) {
         }
     }
 
-   	level.movementMask[positionIndex] = movementMask;
+    level.movementMask[positionIndex] = movementMask;
 
     return moved;
 }
@@ -1006,9 +1002,9 @@ function cellRowMatchesWildCard_ParticularK(direction,cellRow,i,k) {
                 var ruleNonExistenceMask = cellRow[j+2];
                 var ruleStationaryMask = cellRow[j+4];
                 if (ruleMovementMask === ellipsisDirection) {
-                	//BAM inner loop time
-                	//for (var k=0;k<maxk;k++)
-                	{//k defined
+                    //BAM inner loop time
+                    //for (var k=0;k<maxk;k++)
+					{//k defined
                 		var targetIndex2=targetIndex;
                 		targetIndex2 = (targetIndex2+delta[1]*(k)+delta[0]*(k)*level.height+level.dat.length)%level.dat.length;
                 		for (var j2=j+7;j2<cellRow.length;j2+=7) {
@@ -1182,8 +1178,8 @@ function cellRowMatches(direction,cellRow,i,k) {
                 var movementMask = level.movementMask[targetIndex];
                 var ruleMovementMask= cellRow[j+0];
  				if (ruleMovementMask === ellipsisDirection) {
- 					//only for once off verifications
-                	targetIndex = (targetIndex+delta[1]*k+delta[0]*k*level.height)%level.dat.length;
+					//only for once off verifications
+					targetIndex = (targetIndex+delta[1]*k+delta[0]*k*level.height)%level.dat.length;
                 }
                 var cellMask = level.dat[targetIndex];
 
@@ -1232,7 +1228,7 @@ function matchCellRow(direction, cellRow, cellRowMask) {
     		ymin+=(len-1);
     		break;
     	}
-    	case 2: //down
+        case 2: //down
     	{
 			ymax-=(len-1);
 			break;
@@ -1305,14 +1301,14 @@ function matchCellRowWildCard(direction, cellRow,cellRowMask) {
     		ymin+=(len-1);
     		break;
     	}
-    	case 2: //down
+		case 2: //down
     	{
 			ymax-=(len-1);
 			break;
     	}
     	case 4: //left
     	{
-    		xmin+=(len-1);
+			xmin+=(len-1);
     		break;
     	}
     	case 8: //right
@@ -1345,7 +1341,7 @@ function matchCellRowWildCard(direction, cellRow,cellRowMask) {
 			    		kmax=y-len+2;
 			    		break;
 			    	}
-			    	case 2: //down
+					case 2: //down
 			    	{
 						kmax=level.height-(y+len)+1;
 						break;
@@ -1384,7 +1380,7 @@ function matchCellRowWildCard(direction, cellRow,cellRowMask) {
 			    		kmax=y-len+2;
 			    		break;
 			    	}
-			    	case 2: //down
+					case 2: //down
 			    	{
 						kmax=level.height-(y+len)+1;
 						break;
@@ -1476,9 +1472,9 @@ function findRuleMatches(rule) {
     for (var cellRowIndex=0;cellRowIndex<rule[1].length;cellRowIndex++) {
         var cellRow = rule[1][cellRowIndex];
         if (rule[5][cellRowIndex]) {//if ellipsis
-        	var match = matchCellRowWildCard(rule[0],cellRow,cellRowMasks[cellRowIndex]);
+			var match = matchCellRowWildCard(rule[0],cellRow,cellRowMasks[cellRowIndex]);
         } else {
-        	var match = matchCellRow(rule[0],cellRow,cellRowMasks[cellRowIndex]);
+			var match = matchCellRow(rule[0],cellRow,cellRowMasks[cellRowIndex]);
         }
         if (match.length==0) {
             return [];
@@ -1603,9 +1599,9 @@ function applyRuleAt(rule,delta,tuple,check) {
 			if (rule[7]) {
         		rigidCommitted=true;
         		var groupNumber = rule[6];
-        		var rigidGroupIndex = state.groupNumber_to_RigidGroupIndex[groupNumber];
-        		rigidGroupIndex++;//don't forget to -- it when decoding :O
-        		var rigidMask =
+				var rigidGroupIndex = state.groupNumber_to_RigidGroupIndex[groupNumber];
+				rigidGroupIndex++;//don't forget to -- it when decoding :O
+				var rigidMask =
         					(rigidGroupIndex) +
         					((rigidGroupIndex<< ( 1 * 5 ))) +
         					((rigidGroupIndex<< ( 2 * 5 ))) +
@@ -1779,7 +1775,7 @@ function applyRuleGroup(ruleGroup) {
     var loopcount=0;
     while(propagated) {
     	loopcount++;
-    	if (loopcount>200)
+		if (loopcount>200)
     	{
     		logError("Got caught looping lots in a rule group :O",ruleGroup[0][3],true);
     		break;
@@ -1812,8 +1808,8 @@ function propagateMovements(startRuleGroupindex){
 			loopPropagated = applyRuleGroup(ruleGroup) || loopPropagated;
 	    }
         if (loopPropagated && state.loopPoint[ruleGroupIndex]!==undefined) {
-        	ruleGroupIndex = state.loopPoint[ruleGroupIndex];
-        	loopPropagated=false;
+            ruleGroupIndex = state.loopPoint[ruleGroupIndex];
+            loopPropagated=false;
         	loopCount++;
 			if (loopCount > 200) {
     			var ruleGroup=state.rules[ruleGroupIndex];
@@ -1824,16 +1820,16 @@ function propagateMovements(startRuleGroupindex){
         	ruleGroupIndex++;
         	if (ruleGroupIndex===state.rules.length) {
         		if (loopPropagated && state.loopPoint[ruleGroupIndex]!==undefined) {
-		        	ruleGroupIndex = state.loopPoint[ruleGroupIndex];
-		        	loopPropagated=false;
-		        	loopCount++;
+					ruleGroupIndex = state.loopPoint[ruleGroupIndex];
+					loopPropagated=false;
+					loopCount++;
 					if (loopCount > 200) {
-		    			var ruleGroup=state.rules[ruleGroupIndex];
-					   	logError("got caught in an endless startloop...endloop vortex, escaping!", ruleGroup[0][3],true);
-					   	break;
+						var ruleGroup=state.rules[ruleGroupIndex];
+						logError("got caught in an endless startloop...endloop vortex, escaping!", ruleGroup[0][3],true);
+						break;
 					}
-		        }
-        	}
+				}
+			}
         }
     }
 }
@@ -1899,7 +1895,7 @@ function resolveMovements(dir){
     	var movementMask = level.movementMask[i];
     	if (movementMask!==0) {
     		var rigidMovementAppliedMask = level.rigidMovementAppliedMask[i];
-    		var movementMask_restricted = rigidMovementAppliedMask&movementMask;
+			var movementMask_restricted = rigidMovementAppliedMask&movementMask;
     		if (movementMask_restricted!==0) {
     			//find what layer was restricted
     			for (var j=0;j<6;j++) {
@@ -2041,7 +2037,7 @@ function processInput(dir,dontCheckWin,dontModify) {
 
         	if (verbose_logging){consolePrint('applying rules');}
 
-        	propagateMovements(startRuleGroupIndex);
+			propagateMovements(startRuleGroupIndex);
         	var shouldUndo = resolveMovements();
 
         	if (shouldUndo) {
@@ -2089,37 +2085,37 @@ function processInput(dir,dontCheckWin,dontModify) {
         }
 
 	    if (level.commandQueue.indexOf('cancel')>=0) {
-	    	if (verbose_logging) {
+			if (verbose_logging) {
 	    		consolePrint('CANCEL command executed, cancelling turn.');
 			}
     		backups.push(bak);
     		DoUndo(true);
     		seedsToPlay_CanMove=[];
     		seedsToPlay_CantMove=[];
-            if(!unitTesting) {
-                redraw();
-            }
-        	if (verbose_logging) {
-        		consoleCacheDump();
-        	}
+			if(!unitTesting) {
+				redraw();
+			}
+			if (verbose_logging) {
+				consoleCacheDump();
+			}
     		return;
 	    }
 
 	    if (level.commandQueue.indexOf('restart')>=0) {
-	    	if (verbose_logging) {
-	    		consolePrint('RESTART command executed, reverting to restart state.');
+			if (verbose_logging) {
+				consolePrint('RESTART command executed, reverting to restart state.');
 			}
     		backups.push(bak);
-	    	DoRestart(true);
+			DoRestart(true);
     		seedsToPlay_CanMove=[];
     		seedsToPlay_CantMove=[];
-            if(!unitTesting) {
-                redraw();
-            }
+			if(!unitTesting) {
+				redraw();
+			}
     		if (verbose_logging) {
     			consoleCacheDump();
-    		}
-    		return true;
+			}
+			return true;
 	    }
 
         for (var i=0;i<seedsToPlay_CanMove.length;i++) {
@@ -2180,7 +2176,7 @@ function processInput(dir,dontCheckWin,dontModify) {
 	 		var command = level.commandQueue[i];
 	 		if (command.charAt(1)==='f')  {//identifies sfxN
 	 			tryPlaySimpleSound(command);
-	 		}
+			}
 			if (unitTesting===false) {
 				if (command==='message') {
 					showTempMessage();
@@ -2194,7 +2190,7 @@ function processInput(dir,dontCheckWin,dontModify) {
 	    	//verbose_logging=false;
 	    	//first have to verify that something's changed
 	    	if (processInput(-1,true,true)) {
-		    	if (verbose_logging) {
+				if (verbose_logging) {
 		    		consolePrint('AGAIN command executed, with changes detected: will execute another turn.');
 				}
 
@@ -2204,7 +2200,7 @@ function processInput(dir,dontCheckWin,dontModify) {
 		    verbose_logging=old_verbose_logging;
 	    }
 		if (level.commandQueue.indexOf('checkpoint')>=0) {
-	    	if (verbose_logging) {
+			if (verbose_logging) {
 	    		consolePrint('CHECKPOINT command executed, saving current state to the restart state.');
 			}
             pushInput("checkpoint");
@@ -2212,7 +2208,7 @@ function processInput(dir,dontCheckWin,dontModify) {
 		}
 
 	    if (textMode===false && (dontCheckWin===undefined ||dontCheckWin===false)) {
-	    	if (verbose_logging) {
+			if (verbose_logging) {
 	    		consolePrint('Checking win condition.');
 			}
 	    	checkWin();
@@ -2222,10 +2218,9 @@ function processInput(dir,dontCheckWin,dontModify) {
 
     }
 
-    if(!unitTesting) {
-        redraw();
-    }
-    		
+	if(!unitTesting) {
+		redraw();
+	}
 	if (verbose_logging) {
 		consoleCacheDump();
 	}
@@ -2238,7 +2233,7 @@ function checkWin() {
 	}
 
 	if (level.commandQueue.indexOf('win')>=0) {
-		consolePrint("Win Condition Satisfied A");
+		consolePrint("Win Condition Satisfied");
 		DoWin();
 		return;
 	}
@@ -2299,7 +2294,7 @@ function checkWin() {
 	}
 
 	if (won) {
-		consolePrint("Win Condition Satisfied B");
+		consolePrint("Win Condition Satisfied");
 		DoWin();
 	}
 }

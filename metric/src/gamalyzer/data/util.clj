@@ -6,7 +6,7 @@
 							 ^{:static true} [stringify [Object] String]]))
 
 (defn trim [trace len]
-	(make-trace (:id trace) (take len (:inputs trace))))
+	(make-trace (:id trace) (vec (take len (:inputs trace)))))
 
 (defn mappify [t]
   (cond

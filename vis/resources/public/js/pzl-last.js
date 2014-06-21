@@ -189,7 +189,7 @@ function glz_to_pzl(input) {
 	} else if(det[1][0] == "move" && det[2] == "quit") {
 		return "quit";
 	} else if(det[1][0] == "move" && det[2] == "undo") {
-		if(vals.length > 0) {
+		if(vals.length && vals[0] > 1) {
 			//FIXME: ignoring multi-undo since it means the end of a trail. is that OK?
 			return "wait";
 		} else {

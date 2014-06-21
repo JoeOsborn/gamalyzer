@@ -11,3 +11,18 @@
 [:i :player :game (:move) :move (:left)]
 [:i :system :game (:resolve) :win ()]
 :log_end
+[:log_start "fe7319bc-be14-48dd-bc4a-f05ad1129eeb"]
+[:i :player :game (:move) :move (:up)]
+[:i :player :game (:move) :move (:left)]
+[:i :system :game (:resolve) :win ()]
+:log_end
+[:log_start "a94db46e-9b87-4cd2-9f73-2bdfcef2daa9"]
+[:i :player :game (:move) :move (:up)]
+[:i :player :game (:move) :move (:left)]
+[:i :system :game (:resolve) :win ()]
+:log_end
+[:log_start "82a26d5d-8a63-4ff6-8760-c7ad77770b58"]
+[:i :player :game (:move) :move (:up)]
+[:i :player :game (:move) :move (:left)]
+[:i :system :game (:resolve) :win ()]
+:log_end

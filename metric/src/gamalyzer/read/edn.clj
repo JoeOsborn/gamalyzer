@@ -1,7 +1,7 @@
 (ns gamalyzer.read.edn
   (:require [clojure.edn :as edn]
             [multiset.core :as ms]
-						[clojure.java.io :refer [file]]
+						[clojure.java.io :refer [file reader]]
 						[gamalyzer.data.input :refer [make-input make-domains make-traces make-trace expand-domain player]])
   (:import (java.io PushbackReader FileReader)))
 
@@ -74,27 +74,25 @@
     nil))
 
 (defn read-logs
-	([paths blacklist indoms]
-	 (reduce (fn [{traces :traces
-								 doms :domains} file]
-						 (let [{new-traces :traces
-										new-doms :domains}
-									 (read-logs file :all blacklist doms)]
-							 (make-traces (into traces new-traces) new-doms)))
-					 (make-traces [] (or indoms (make-domains)))
-					 paths))
+	([path blacklist indoms]
+	 (read-logs path :all blacklist indoms))
   ([path how-many blacklist indoms]
    (let [log (open-log path blacklist)
+				 _ (println log)
          domains (if (nil? indoms) (make-domains) indoms)]
      (loop [ts (transient (vector))
             remaining how-many
             doms domains]
        (if (or (= remaining :all) (> remaining 0))
          (if-let [{[trace] :traces, new-doms :domains} (read-log-trace log doms)]
-           (recur
-            (conj! ts trace)
-            (if (number? remaining) (- remaining 1) remaining)
-            new-doms)
+					 (if (> (count (:inputs trace)) 0)
+						 (recur
+							(conj! ts trace)
+							(if (number? remaining) (- remaining 1) remaining)
+							new-doms)
+						 (do
+							 (println "Skip empty trace" trace)
+							 (recur ts remaining doms)))
            (do
              (close-log log)
              (make-traces (persistent! ts) doms)))
@@ -102,16 +100,41 @@
            (close-log log)
            (make-traces (persistent! ts) doms)))))))
 
+(defn read-log-files
+	([paths blacklist indoms]
+	 (read-log-files paths :all blacklist indoms))
+  ([paths how-many blacklist indoms]
+	 (reduce (fn [{traces :traces
+								 doms :domains} file]
+						 (let [{new-traces :traces
+										new-doms :domains}
+									 (read-logs file
+															(if (= how-many :all) :all (- how-many (count traces)))
+															blacklist
+															doms)]
+							 (make-traces (into traces new-traces) new-doms)))
+					 (make-traces [] (or indoms (make-domains)))
+					 paths)))
+
 (defn sample-data
   ([] (sample-data nil))
   ([lev]
    (let [files (filter #(.endsWith (.getName %)
                                    (str (if (nil? lev) "" (str "_" lev)) ".trace"))
                        (file-seq (file "resources/traces/")))]
-		 (read-logs files #{} nil))))
+		 (read-log-files files #{} nil))))
 
 (defn read-path [matching-files real-path excess-path settings]
-	(read-logs matching-files #{} (make-domains)))
+	(read-log-files matching-files 100 #{} (make-domains)))
+
+#_(read-path [(file "../vis/resources/traces/prom-week/naomi.txt")]
+					 (file "../vis/resources/traces/prom-week/naomi.txt")
+					 []
+					 {:reader 'gamalyzer.read.edn
+						:excess-path-separator "_"
+						:excess-path-match :ignore
+						:suffix ["txt"]})
+
 
 ; Informal tests and usage examples.
 

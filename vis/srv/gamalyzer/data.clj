@@ -6,6 +6,7 @@
             [gamalyzer.read.edn :as edn]
 						[gamalyzer.read.synth :as synth]
 						[gamalyzer.read.mario :as mario]
+						[gamalyzer.read.minidun :as minidun]
             [gamalyzer.cmp.tt :refer [pivot-distances]]
             [gamalyzer.cmp.tt.cced :refer [with-warp-window]]
 						[gamalyzer.data.util :refer [mappify]]
@@ -13,8 +14,7 @@
             [clojure.core.matrix :refer [mutable slices to-nested-vectors new-array
                                          mget mset! shape square dimension-count
                                          submatrix to-nested-vectors get-row]])
-  (:import [java.util UUID]
-           [mdsj MDSJ]))
+  (:import [mdsj MDSJ]))
 
 (defn assign-vec-at! [m & indices-vec]
   (let [vct (last indices-vec)
@@ -128,7 +128,6 @@
 
 #_(split-path ["/Users" "jcosborn" "Projects" "gamalyzer" "vis" "resources" "traces" "mario"])
 
-
 (def default-settings
 	{:reader 'gamalyzer.read.edn
 	 :excess-path-separator "_"
@@ -207,7 +206,9 @@
 						(filter-matching-files all-files excess-path ps pm))]
 		(join-traces (reader-fn matching-files real-path excess-path settings) child-traces)))
 
-#_(game-data (concat ["resources" "traces"] ["newgame" "lev-0" "normal_a"]))
+#_(game-data (concat ["resources" "traces"] ["minidungeons" "complete" "1"]))
+
+#_(game-data (concat ["resources" "traces"] ["prom-week" "edward"]))
 
 (defn find-pivots [k vs doms]
   (let [n (count vs)
@@ -218,11 +219,16 @@
 (defn process-data [logs k]
   (let [vs (:traces logs)
         doms (:domains logs)
+				_ (println "look for pivots")
         [pivots mat] (find-pivots k vs doms)
+				_ (println "found pivots")
         pivot-ids (map :id pivots)
         msq (square mat)
+				_ (println "converting kxn->kxk")
         pivot-mat (kxnxd->kxkxd msq pivot-ids vs)
+				_ (println "created kxk matrix")
         similars (tally-similars msq pivot-ids vs)
+				_ (println "found similarity counts")
         pivot-diffs-t (map to-nested-vectors (slices pivot-mat 2))]
     [(map #(or (:label %) (:id %)) pivots)
      (map #(assoc % :similar-count (or (get similars (:id %)) 0)) pivots)

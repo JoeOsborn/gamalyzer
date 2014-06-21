@@ -23,7 +23,7 @@ function addLeftColumn() {
 	for (var i=0;i<level.height;i++) {
 		level.dat.splice(i,0,bgMask);
 	}
-    dirty.all = true;
+	dirty.all = true;
 	level.width++;
 	recalcLevelBounds();
 	columnAdded=true;
@@ -34,7 +34,7 @@ function addRightColumn(){
 	for (var i=0;i<level.height;i++) {
 		level.dat.push(bgMask);
 	}
-    dirty.all = true;
+	dirty.all = true;
 	level.width++;
 	recalcLevelBounds();
 	columnAdded=true;
@@ -45,7 +45,7 @@ function addTopRow(){
 	for (var i=level.width-1;i>=0;i--) {
 		level.dat.splice(i*level.height,0,bgMask);
 	}
-    dirty.all = true;
+	dirty.all = true;
 	level.height++;
 	recalcLevelBounds();
 	columnAdded=true;
@@ -55,7 +55,7 @@ function addBottomRow(){
 	for (var i=level.width-1;i>=0;i--) {
 		level.dat.splice(level.height+i*level.height,0,bgMask);
 	}
-    dirty.all = true;
+	dirty.all = true;
 	level.height++;
 	recalcLevelBounds();
 	columnAdded=true;
@@ -69,7 +69,7 @@ function removeLeftColumn() {
 	for (var i=0;i<level.height;i++) {
 		level.dat.splice(0,1);
 	}
-    dirty.all = true;
+	dirty.all = true;
 	level.width--;
 	recalcLevelBounds();
 	columnAdded=true;
@@ -83,7 +83,7 @@ function removeRightColumn(){
 	for (var i=0;i<level.height;i++) {
 		level.dat.splice(level.dat.length-1,1);
 	}
-    dirty.all = true;
+	dirty.all = true;
 	level.width--;
 	recalcLevelBounds();
 	columnAdded=true;
@@ -97,7 +97,7 @@ function removeTopRow(){
 	for (var i=level.width-1;i>=0;i--) {
 		level.dat.splice(i*level.height,1);
 	}
-    dirty.all = true;
+	dirty.all = true;
 	level.height--;
 	recalcLevelBounds();
 	columnAdded=true;
@@ -110,7 +110,7 @@ function removeBottomRow(){
 	for (var i=level.width-1;i>=0;i--) {
 		level.dat.splice(level.height-1+i*level.height,1);
 	}
-    dirty.all = true;
+	dirty.all = true;
 	level.height--;
 	recalcLevelBounds();
 	columnAdded=true;
@@ -251,7 +251,7 @@ function levelEditorClick(event,click) {
 
 		var coordIndex = mouseCoordY + mouseCoordX*level.height;
 		level.dat[coordIndex]=glyphmask;
-        dirty[coordIndex]=true;
+		dirty[coordIndex]=true;
 		redraw();
 	}
 	else if (click) {
@@ -285,7 +285,7 @@ function levelEditorRightClick(event,click) {
 		var glyphmask = 1<<state.backgroundid;
 		var coordIndex = mouseCoordY + mouseCoordX*level.height;
 		level.dat[coordIndex]=glyphmask;
-        dirty[coordIndex]=true;
+		dirty[coordIndex]=true;
 		redraw();
 	}
 	else if (click) {
@@ -431,11 +431,11 @@ function setMouseCoord(e){
 
 function mouseMove(event) {
     if (levelEditorOpened) {
-    	setMouseCoord(event);
-    	if (dragging) {
+		setMouseCoord(event);
+		if (dragging) {
     		levelEditorClick(event,false);
     	} else if (rightdragging){
-    		levelEditorRightClick(event,false);
+			levelEditorRightClick(event,false);
     	}
     }
 
@@ -573,8 +573,8 @@ function checkKey(e,justPressed) {
 
         		canvasResize();
         		return prevent(e);
-        	}
-        	break;
+			}
+			break;
         }
     }
 
@@ -584,7 +584,7 @@ function checkKey(e,justPressed) {
     	} else if (titleScreen) {
     		if (titleMode===0) {
     			if (inputdir===4&&justPressed) {
-    				if (titleSelected===false) {
+					if (titleSelected===false) {
 						tryPlayStartGameSound();
 	    				titleSelected=true;
 	    				messageselected=false;
@@ -596,7 +596,7 @@ function checkKey(e,justPressed) {
     			}
     		} else {
     			if (inputdir==4&&justPressed) {
-    				if (titleSelected===false) {
+					if (titleSelected===false) {
 						tryPlayStartGameSound();
 	    				titleSelected=true;
 	    				messageselected=false;
@@ -613,7 +613,7 @@ function checkKey(e,justPressed) {
     			}
     		}
     	} else {
-    		if (inputdir==4&&justPressed) {
+			if (inputdir==4&&justPressed) {
 				if (unitTesting && testsAutoAdvanceLevel) {
 					nextLevel();
 					return;
@@ -666,8 +666,8 @@ function update() {
 				titleMode=curlevel>0?1:0;
 				titleSelected=false;
 				titleSelection=0;
-    			canvasResize();
-    			checkWin();
+				canvasResize();
+				checkWin();
             }
         }
     }

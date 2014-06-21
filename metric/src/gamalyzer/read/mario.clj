@@ -150,7 +150,7 @@
                                                                     samples-per-frame)))
         inputs (map-indexed #(bytes->input %1 quantize %2) padded-byte-groups)
         new-doms (expand-domain* inputs doms)]
-    (make-traces [(make-trace :synthetic inputs)] new-doms)))
+    (make-traces [(make-trace :synthetic (vec inputs))] new-doms)))
 
 ; Informal tests and usage examples.
 
