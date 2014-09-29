@@ -6,7 +6,9 @@
   (:gen-class :name gamalyzer.read.Mario
               :methods
               [^{:static true} [readLogs ["[Ljava.io.File;"] gamalyzer.data.input.Traces]
-               ^{:static true} [readActions [gamalyzer.data.input.Traces bytes] gamalyzer.data.input.Traces]]))
+               ^{:static true} [readLogs ["[Ljava.io.File;" int int] gamalyzer.data.input.Traces]
+               ^{:static true} [readActions [gamalyzer.data.input.Traces bytes] gamalyzer.data.input.Traces]
+               ^{:static true} [readActions [gamalyzer.data.input.Traces bytes int int] gamalyzer.data.input.Traces]]))
 
 (defn byte->bits [i]
   (reverse (map #(bit-test i %) (range 0 8))))
@@ -59,13 +61,13 @@
       (csv->input t quantize lines))
     nil))
 
-(defn read-log-trace [path blacklist doms]
-  (let [fl (file path)
+(defn read-log-trace 
+  ([path blacklist doms] (read-log-trace path blacklist doms 24 4))
+  ([path blacklist doms samples-per-frame quantize]
+    (let [fl (file path)
         fname (.getName fl)
         is-act (.endsWith fname ".act")
-        is-csv (.endsWith fname ".csv")
-        samples-per-frame 24
-        quantize 4]
+        is-csv (.endsWith fname ".csv")]
     (when-not (or is-act is-csv)
       (throw (.IllegalArgumentException
               (str "Path " path " is neither ACT nor CSV."))))
@@ -83,23 +85,23 @@
             (recur (conj! inputs input)
                    (expand-domain input doms))
             (make-traces [(make-trace id (persistent! inputs))]
-                         doms)))))))
+                         doms))))))))
 
 (defn find-files [path suffix]
   (filter #(.endsWith (.getName %) suffix)
           (file-seq (file path))))
 
 (defn read-logs
-	([paths blacklist indoms]
+	([paths blacklist indoms samples-per-frame quantize]
 	 (reduce (fn [{traces :traces
 								 doms :domains} file]
 						 (let [{[trace] :traces
 										new-doms :domains}
-									 (read-logs file :all blacklist doms)]
+									 (read-logs file :all blacklist doms samples-per-frame quantize)]
 							 (make-traces (conj traces trace) new-doms)))
 					 (make-traces [] (or indoms (make-domains)))
 					 paths))
-	([path how-many blacklist indoms]
+	([path how-many blacklist indoms samples-per-frame quantize]
 	 (let [act-files (find-files path ".act")
 				 csv-files (find-files path ".csv")
 				 files (concat act-files csv-files)
@@ -114,7 +116,9 @@
 				 (if-let [{[trace] :traces new-doms :domains}
 									(read-log-trace (nth files i)
 																	blacklist
-																	doms)]
+																	doms
+                                  samples-per-frame
+                                  quantize)]
 					 (recur
 						(conj! ts trace)
 						(inc i)
@@ -128,29 +132,32 @@
    (let [files (filter #(.endsWith (.getName %)
                                    (str "_" lev ".csv"))
                        (file-seq (file "resources/traces/mario/PlayersReplays")))]
-		 (read-logs files #{} nil))))
+		 (read-logs files #{} nil 24))))
 
 (defn read-path [matching-files real-path excess-path settings]
-	(read-logs matching-files #{} (make-domains)))
+	(read-logs matching-files #{} (make-domains) (get settings :samples-per-frame 24) (get settings :quantize 4)))
 
-(defn -readLogs [files] (read-logs files #{} nil))
+(defn -readLogs 
+  ([files] (-readLogs files 24 1))
+  ([files samples-per-frame quantize]
+    (read-logs files #{} nil samples-per-frame quantize)))
 
 (defn replace-last [s elt] (conj (butlast s) elt))
 
-(defn -readActions [{doms :domains} actions]
-  ;group actions into chunks of size samples-per-frame
-  ;pad the last chunk with 0s
-  (let [samples-per-frame 24
-        quantize 4
-        byte-groups (partition samples-per-frame actions)
-        last-group (last byte-groups)
-        padded-byte-groups (replace-last byte-groups (reduce (fn [g _] (conj g 0))
-                                                             last-group
-                                                             (range (count last-group)
-                                                                    samples-per-frame)))
-        inputs (map-indexed #(bytes->input %1 quantize %2) padded-byte-groups)
-        new-doms (expand-domain* inputs doms)]
-    (make-traces [(make-trace :synthetic (vec inputs))] new-doms)))
+(defn -readActions 
+  ([trace actions] (-readActions trace actions 24))
+  ([{doms :domains} actions samples-per-frame quantize]
+    ;group actions into chunks of size samples-per-frame
+    ;pad the last chunk with 0s
+    (let [byte-groups (partition samples-per-frame actions)
+          last-group (last byte-groups)
+          padded-byte-groups (replace-last byte-groups (reduce (fn [g _] (conj g 0))
+                                                               last-group
+                                                               (range (count last-group)
+                                                                      samples-per-frame)))
+          inputs (map-indexed #(bytes->input %1 quantize %2) padded-byte-groups)
+          new-doms (expand-domain* inputs doms)]
+      (make-traces [(make-trace :synthetic (vec inputs))] new-doms))))
 
 ; Informal tests and usage examples.
 
