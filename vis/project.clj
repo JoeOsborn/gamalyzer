@@ -3,6 +3,7 @@
   :url "http://github.com/JoeOsborn/gamalyzer"
 	:license {:name "MIT License"
 						:url "http://mit-license.org"}
+  :main gamalyzer.repl
   :dependencies [[org.clojure/clojure "1.5.1"]
                  [org.clojure/core.cache "0.6.3"]
                  [org.clojure/core.memoize "0.5.6"]

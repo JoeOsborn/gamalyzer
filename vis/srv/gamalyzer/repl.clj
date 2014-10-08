@@ -1,7 +1,8 @@
 (ns gamalyzer.repl
   (:use gamalyzer.handler
         ring.server.standalone
-        [ring.middleware file-info file]))
+        [ring.middleware file-info file])
+  (:gen-class))
 
 (defonce server (atom nil))
 
@@ -27,7 +28,7 @@
                     :auto-reload? true
                     :destroy destroy
                     :join true}))
-    (println (str "You can view the site at http://localhost:" port))))
+    (println (str "You can view the visualization at e.g. http://localhost:" port "/mario/1"))))
 
 (defn stop-server []
   (.stop @server)
@@ -35,4 +36,5 @@
 
 ;(stop-server)
 
-(start-server)
+(defn -main[] (start-server))
+;(start-server)
