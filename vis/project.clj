@@ -19,7 +19,6 @@
                  [net.mikera/core.matrix "0.15.0"]
                  [net.mikera/core.matrix.stats "0.3.0"]
                  [de.uni-konstanz.inf.algo/mdsj "0.2"]
-                 [apporiented.com/hierarchical-clustering "1.0"]
                  [clojure-csv/clojure-csv "2.0.1"]
                  [org.clojure/clojurescript "0.0-2138"]
                  [net.drib/strokes "0.5.1"]
